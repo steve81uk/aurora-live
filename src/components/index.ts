@@ -6,3 +6,7 @@ export { SolarWindDisplay } from './SolarWindDisplay';
 export { PeakTimer } from './PeakTimer';
 export { CollapsiblePanel } from './CollapsiblePanel';
 export { RecommendationDisplay } from './RecommendationDisplay';
+export { default as Globe3D } from './Globe3D';
+export { DataSidebar } from './DataSidebar';
+export { default as SolarSystemScene } from './SolarSystemScene';
+export { HUDOverlay } from './HUDOverlay';
