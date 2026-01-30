@@ -5,9 +5,14 @@ import { LOCATIONS } from './data/locations';
 import { useAuroraData } from './hooks/useAuroraData';
 import { useSoundFX } from './hooks/useSoundFX';
 import { SolarSystemScene, HUDOverlay } from './components';
+import TelemetryDeck from './components/TelemetryDeck';
 
 export default function App() {
   const [selectedLocation, setSelectedLocation] = useState(LOCATIONS[0]);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [focusedBody, setFocusedBody] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const { data, loading, error, visibility, refetch } = useAuroraData(selectedLocation);
   const { playBip, checkKpIncrease } = useSoundFX();
   const isOnline = !error;
@@ -27,43 +32,52 @@ export default function App() {
     refetch();
     playBip();
   };
+  
+  const handleResetView = () => {
+    setFocusedBody(null);
+    playBip();
+  };
 
   return (
     <div className="relative w-screen h-screen bg-black overflow-hidden">
       <div className="absolute inset-0 z-0">
         <Canvas
-          camera={{ position: [0, 2, 8], fov: 50 }}
+          camera={{ position: [100, 40, 100], fov: 50, far: 5000 }}
           gl={{ antialias: true }}
           shadows
         >
           <Stars
-            radius={100}
-            depth={50}
-            count={5000}
-            factor={4}
+            radius={200}
+            depth={100}
+            count={8000}
+            factor={6}
             saturation={0}
             fade
-            speed={1}
+            speed={0.5}
           />
           
           <SolarSystemScene
             kpValue={data.kpIndex?.kpValue || 3}
             solarWindSpeed={data.solarWind?.speed || 400}
+            currentDate={currentDate}
+            focusedBody={focusedBody}
+            onBodyFocus={setFocusedBody}
           />
           
           <OrbitControls
             enableZoom={true}
-            autoRotate={true}
-            autoRotateSpeed={0.2}
-            minDistance={3}
-            maxDistance={20}
-            maxPolarAngle={Math.PI}
-            minPolarAngle={0}
+            autoRotate={!focusedBody} // Disable auto-rotate when focused
+            autoRotateSpeed={0.3}
+            minDistance={20}
+            maxDistance={2000}
+            maxPolarAngle={Math.PI / 1.5}
+            minPolarAngle={Math.PI / 4}
+            target={[0, 0, 0]}
           />
         </Canvas>
       </div>
 
-      <div className="absolute inset-0 z-50">
+      <div className="absolute inset-0 z-50 pointer-events-none">
         <HUDOverlay
           selectedLocation={selectedLocation}
           onLocationChange={handleLocationChange}
@@ -75,8 +89,23 @@ export default function App() {
           error={error}
           onRefresh={handleRefresh}
           isOnline={isOnline}
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
         />
       </div>
+      
+      <TelemetryDeck
+        currentDate={currentDate}
+        onDateChange={setCurrentDate}
+        solarWindSpeed={data.solarWind?.speed || 400}
+        kpValue={data.kpIndex?.kpValue || 3}
+        focusedBody={focusedBody}
+        onResetView={handleResetView}
+        isPlaying={isPlaying}
+        setIsPlaying={setIsPlaying}
+        playbackSpeed={playbackSpeed}
+        setPlaybackSpeed={setPlaybackSpeed}
+      />
     </div>
   );
 }
