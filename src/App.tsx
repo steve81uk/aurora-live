@@ -8,6 +8,8 @@ import { useSoundFX } from './hooks/useSoundFX';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { SolarSystemScene } from './components';
 import { ShootingStars } from './components/ShootingStars';
+import { HeimdallProtocol } from './components/HeimdallProtocol';
+import { MythicThemeSelector } from './components/MythicThemeSelector';
 import ThemeSelector from './components/ThemeSelector';
 import { type HUDTheme } from './components/HelmetHUD';
 import CornerMetrics from './components/CornerMetrics';
@@ -15,6 +17,7 @@ import MobileDataPanel from './components/MobileDataPanel';
 import MissionControlView from './components/MissionControlView';
 import KeyboardHelp from './components/KeyboardHelp';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import type { AppTheme } from './types/mythic';
 
 type ViewMode = 'explorer' | 'analyst';
 
@@ -24,6 +27,7 @@ export default function App() {
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hudTheme, setHudTheme] = useState<HUDTheme>('fighter');
+  const [mythicTheme, setMythicTheme] = useState<AppTheme>('SCI_FI');
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('explorer');
   const [uiVisible, setUiVisible] = useState(true);
@@ -31,11 +35,15 @@ export default function App() {
   const { data } = useAuroraData(selectedLocation);
   const { checkKpIncrease } = useSoundFX();
 
-  // Load view preference
+  // Load preferences
   useEffect(() => {
-    const saved = localStorage.getItem('viewMode');
-    if (saved === 'explorer' || saved === 'analyst') {
-      setViewMode(saved);
+    const savedView = localStorage.getItem('viewMode');
+    if (savedView === 'explorer' || savedView === 'analyst') {
+      setViewMode(savedView);
+    }
+    const savedTheme = localStorage.getItem('mythicTheme');
+    if (savedTheme === 'SCI_FI' || savedTheme === 'NORSE' || savedTheme === 'SHEIKAH') {
+      setMythicTheme(savedTheme);
     }
   }, []);
 
@@ -43,6 +51,12 @@ export default function App() {
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
     localStorage.setItem('viewMode', mode);
+  };
+  
+  // Save theme preference
+  const handleThemeChange = (theme: AppTheme) => {
+    setMythicTheme(theme);
+    localStorage.setItem('mythicTheme', theme);
   };
 
   // Fullscreen toggle
@@ -182,6 +196,14 @@ export default function App() {
       {/* ========== LAYER 1: THE UI OVERLAY ========== */}
       <div className="absolute inset-0 z-10 pointer-events-none">
         
+        {/* Heimdall Protocol / Mythic Warning System */}
+        <HeimdallProtocol
+          theme={mythicTheme}
+          kpIndex={data.kpIndex?.kpValue || 3}
+          windSpeed={data.solarWind?.speed || 400}
+          bz={data.solarWind?.bz}
+        />
+        
         {/* Helmet Visor Effects (Ultra Minimal) */}
         {/* Vignette Effect (Helmet Edge Darkness) - BARELY VISIBLE */}
         <div 
@@ -280,7 +302,8 @@ export default function App() {
             </div>
 
             {/* Theme Selector - Top-Right (Minimal) */}
-            <div className="absolute top-2 right-2 pointer-events-auto">
+            <div className="absolute top-2 right-2 flex gap-1 pointer-events-auto">
+              <MythicThemeSelector theme={mythicTheme} onThemeChange={handleThemeChange} />
               <ThemeSelector theme={hudTheme} onThemeChange={setHudTheme} />
             </div>
 
