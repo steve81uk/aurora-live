@@ -60,6 +60,7 @@
 - **ISS & DSCOVR Satellites**: Live orbital mechanics
 - **10,000-Star Parallax Background**: 3-layer depth with twinkling effect
 - **Orbit Trails**: 365-point ephemeris data visualized as dashed ellipses
+- **Shooting Stars**: Random meteors (every 3-8s) with NASA Fireball API data
 
 ### ⚡ Space Weather Monitoring
 - **Live Solar Wind**: Speed, density, temperature, magnetic field (Bz)

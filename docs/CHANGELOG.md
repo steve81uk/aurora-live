@@ -2,6 +2,50 @@
 
 All notable changes to Solar Admiral will be documented in this file.
 
+## [0.7.0] - 2026-01-30
+
+### Added
+- **Shooting Stars / Meteors**: Random animated meteors streaking across the sky
+  - Spawn every 3-8 seconds at random positions
+  - Realistic trajectory with downward bias
+  - 5-point trail effect with fade
+  - Speed variation: 15-40 km/s
+  - Color variety: White (70%), blue-white (20%), yellow-green (10%)
+  - 1.5-2.5 second lifespan with fade in/out
+  - Additive blending for realistic glow
+- **NASA Fireball API Integration**: Real meteor event data
+  - Hook: `useNASAFireballs()` fetches latest 20 bolide events
+  - Data: Date, location (lat/lon), altitude, velocity, energy
+  - API: `https://ssd-api.jpl.nasa.gov/fireball.api`
+  - Auto-refresh every 6 hours
+  - Error handling and loading states
+- **Ultra-Minimal Helmet Effects**: Reduced all overlay opacity by 50-70%
+  - Vignette: 5-15% (was 15-40%)
+  - Scanlines: opacity-3 (was opacity-5)
+  - Crosshair: opacity-10 (was opacity-20)
+  - Arc Reactor: opacity-15 (was opacity-30)
+  - Astronaut Frame: opacity-5 (was opacity-10)
+  - Result: Near-fullscreen 3D view with barely visible HUD effects
+
+### Changed
+- Canvas now occupies 95%+ of viewport (helmet effects almost invisible)
+- Background stars more prominent with reduced vignette
+- Shooting stars layer between background stars and solar system
+
+### Technical
+- Bundle: **345.73 KB gzipped** (+0.65 KB)
+- Build Time: 14.97 seconds
+- New Files: ShootingStars.tsx (5,749 chars), useNASAFireballs.ts (2,437 chars)
+- Performance: 60 FPS maintained, particle system optimized
+
+### User Experience
+1. **Look at the stars** → Random shooting stars appear every few seconds
+2. **Press H** → Pure 3D view with meteors streaking across
+3. **API Data** → Real NASA fireball events available for visualization
+4. **Fullscreen Feel** → Helmet effects now barely visible (5-15% opacity)
+
+---
+
 ## [0.6.0] - 2026-01-30
 
 ### Added

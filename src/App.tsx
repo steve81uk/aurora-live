@@ -7,6 +7,7 @@ import { useAuroraData } from './hooks/useAuroraData';
 import { useSoundFX } from './hooks/useSoundFX';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { SolarSystemScene } from './components';
+import { ShootingStars } from './components/ShootingStars';
 import ThemeSelector from './components/ThemeSelector';
 import { type HUDTheme } from './components/HelmetHUD';
 import CornerMetrics from './components/CornerMetrics';
@@ -148,6 +149,9 @@ export default function App() {
             speed={0.5}
           />
           
+          {/* Shooting Stars / Meteors */}
+          <ShootingStars />
+          
           <SolarSystemScene
             kpValue={data.kpIndex?.kpValue || 3}
             solarWindSpeed={data.solarWind?.speed || 400}
@@ -179,30 +183,30 @@ export default function App() {
       <div className="absolute inset-0 z-10 pointer-events-none">
         
         {/* Helmet Visor Effects (Ultra Minimal) */}
-        {/* Vignette Effect (Helmet Edge Darkness) */}
+        {/* Vignette Effect (Helmet Edge Darkness) - BARELY VISIBLE */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0.4) 100%)',
+            background: 'radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.05) 85%, rgba(0,0,0,0.15) 100%)',
             mixBlendMode: 'multiply'
           }}
         />
 
-        {/* Scanlines (Fighter & Commander Themes) - Ultra Subtle */}
+        {/* Scanlines (Fighter & Commander Themes) - BARELY VISIBLE */}
         {(hudTheme === 'fighter' || hudTheme === 'commander') && (
           <div 
-            className="absolute inset-0 opacity-5 pointer-events-none animate-pulse"
+            className="absolute inset-0 opacity-3 pointer-events-none animate-pulse"
             style={{
-              background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.1) 2px, rgba(0,255,255,0.1) 4px)',
+              background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.05) 2px, rgba(0,255,255,0.05) 4px)',
               animationDuration: '3s'
             }}
           />
         )}
 
-        {/* Center Crosshair (Fighter & Commander Themes) - Ultra Subtle */}
+        {/* Center Crosshair (Fighter & Commander Themes) - BARELY VISIBLE */}
         {(hudTheme === 'fighter' || hudTheme === 'commander') && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <svg width="40" height="40" viewBox="0 0 60 60" className="opacity-20">
+            <svg width="40" height="40" viewBox="0 0 60 60" className="opacity-10">
               <circle cx="30" cy="30" r="28" fill="none" stroke="cyan" strokeWidth="0.5" />
               <line x1="30" y1="5" x2="30" y2="18" stroke="cyan" strokeWidth="0.8" />
               <line x1="30" y1="42" x2="30" y2="55" stroke="cyan" strokeWidth="0.8" />
@@ -213,12 +217,12 @@ export default function App() {
           </div>
         )}
 
-        {/* Arc Reactor Center (Iron Man Theme) - Ultra Subtle */}
+        {/* Arc Reactor Center (Iron Man Theme) - BARELY VISIBLE */}
         {hudTheme === 'ironman' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             <div className="relative w-16 h-16 animate-pulse">
-              <div className="absolute inset-0 rounded-full bg-cyan-400/10 blur-lg" />
-              <svg width="64" height="64" viewBox="0 0 80 80" className="opacity-30">
+              <div className="absolute inset-0 rounded-full bg-cyan-400/5 blur-lg" />
+              <svg width="64" height="64" viewBox="0 0 80 80" className="opacity-15">
                 <circle cx="40" cy="40" r="35" fill="none" stroke="url(#arcGradient)" strokeWidth="1" />
                 <circle cx="40" cy="40" r="28" fill="none" stroke="cyan" strokeWidth="0.5" opacity="0.3" />
                 <circle cx="40" cy="40" r="20" fill="none" stroke="cyan" strokeWidth="0.8" opacity="0.5" />
@@ -234,10 +238,10 @@ export default function App() {
           </div>
         )}
 
-        {/* NASA-style Circular Frame (Astronaut Theme) - Ultra Subtle */}
+        {/* NASA-style Circular Frame (Astronaut Theme) - BARELY VISIBLE */}
         {hudTheme === 'astronaut' && (
           <div className="absolute inset-0 pointer-events-none">
-            <svg className="w-full h-full opacity-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <svg className="w-full h-full opacity-5" viewBox="0 0 100 100" preserveAspectRatio="none">
               <ellipse cx="50" cy="50" rx="48" ry="45" fill="none" stroke="white" strokeWidth="0.15" />
               <ellipse cx="50" cy="50" rx="46" ry="43" fill="none" stroke="white" strokeWidth="0.08" />
             </svg>
