@@ -16,6 +16,9 @@ interface SolarSystemSceneProps {
   focusedBody?: string | null;
   onBodyFocus?: (body: string | null) => void;
   controlsRef?: React.RefObject<OrbitControlsImpl | null>;
+  surfaceMode?: boolean;
+  surfaceLocation?: import('../data/surfaceLocations').SurfaceLocation | null;
+  mythicTheme?: import('../types/mythic').AppTheme;
 }
 
 interface PlanetConfig {
@@ -200,13 +203,15 @@ function Planet({
   kpValue, 
   currentDate, 
   onClick,
-  focusedBody
+  focusedBody,
+  surfaceMode = false
 }: { 
   config: PlanetConfig; 
   kpValue?: number; 
   currentDate: Date;
   onClick?: () => void;
   focusedBody?: string | null;
+  surfaceMode?: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
@@ -301,6 +306,9 @@ function Planet({
               map={earthTexture}
               roughness={0.8}
               metalness={0.2}
+              transparent={surfaceMode && focusedBody === config.name}
+              opacity={surfaceMode && focusedBody === config.name ? 0.15 : 1.0}
+              side={THREE.DoubleSide}
             />
           ) : (
             <meshStandardMaterial
@@ -309,6 +317,9 @@ function Planet({
               emissiveIntensity={0.2}
               roughness={0.7}
               metalness={0.2}
+              transparent={surfaceMode && focusedBody === config.name}
+              opacity={surfaceMode && focusedBody === config.name ? 0.2 : 1.0}
+              side={THREE.DoubleSide}
             />
           )}
         </mesh>
@@ -865,7 +876,10 @@ export default function SolarSystemScene({
   currentDate = new Date(),
   focusedBody = null,
   onBodyFocus = () => {},
-  controlsRef
+  controlsRef,
+  surfaceMode = false,
+  surfaceLocation: _surfaceLocation = null,
+  mythicTheme: _mythicTheme = 'SCI_FI'
 }: SolarSystemSceneProps) {
   const { camera, size } = useThree();
   const showTrails = true; // TODO: Add toggle in UI
@@ -1065,6 +1079,7 @@ export default function SolarSystemScene({
             onBodyFocus(planet.name);
           }}
           focusedBody={focusedBody}
+          surfaceMode={surfaceMode}
         />
       ))}
 

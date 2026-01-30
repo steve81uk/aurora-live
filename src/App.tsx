@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { Monitor, Satellite, Maximize } from 'lucide-react';
 import { LOCATIONS } from './data/locations';
+import { SURFACE_LOCATIONS, type SurfaceLocation } from './data/surfaceLocations';
 import { useAuroraData } from './hooks/useAuroraData';
 import { useSoundFX } from './hooks/useSoundFX';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -10,6 +11,7 @@ import { SolarSystemScene } from './components';
 import { ShootingStars } from './components/ShootingStars';
 import { HeimdallProtocol } from './components/HeimdallProtocol';
 import { MythicThemeSelector } from './components/MythicThemeSelector';
+import { SurfaceViewControls } from './components/SurfaceViewControls';
 import ThemeSelector from './components/ThemeSelector';
 import { type HUDTheme } from './components/HelmetHUD';
 import CornerMetrics from './components/CornerMetrics';
@@ -25,6 +27,8 @@ export default function App() {
   const [selectedLocation] = useState(LOCATIONS[0]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
+  const [surfaceMode, setSurfaceMode] = useState(false);
+  const [surfaceLocation, setSurfaceLocation] = useState<SurfaceLocation | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hudTheme, setHudTheme] = useState<HUDTheme>('fighter');
   const [mythicTheme, setMythicTheme] = useState<AppTheme>('SCI_FI');
@@ -58,6 +62,33 @@ export default function App() {
     setMythicTheme(theme);
     localStorage.setItem('mythicTheme', theme);
   };
+  
+  // Handle body focus (enter surface mode if locations available)
+  const handleBodyFocus = (bodyName: string | null) => {
+    setFocusedBody(bodyName);
+    
+    if (bodyName && SURFACE_LOCATIONS[bodyName]) {
+      // Enter surface mode with first location
+      setSurfaceMode(true);
+      setSurfaceLocation(SURFACE_LOCATIONS[bodyName][0]);
+    } else {
+      // Exit surface mode
+      setSurfaceMode(false);
+      setSurfaceLocation(null);
+    }
+  };
+  
+  // Handle surface location change
+  const handleSurfaceLocationChange = (location: SurfaceLocation) => {
+    setSurfaceLocation(location);
+  };
+  
+  // Exit surface mode
+  const handleExitSurface = () => {
+    setSurfaceMode(false);
+    setSurfaceLocation(null);
+    setFocusedBody(null);
+  };
 
   // Fullscreen toggle
   const toggleFullscreen = () => {
@@ -83,7 +114,10 @@ export default function App() {
     onTogglePlay: () => setIsPlaying(!isPlaying),
     onSkipBackward: () => setCurrentDate(new Date(currentDate.getTime() - 24 * 60 * 60 * 1000)),
     onSkipForward: () => setCurrentDate(new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)),
-    onResetView: () => setFocusedBody(null),
+    onResetView: () => {
+      handleExitSurface();
+      setFocusedBody(null);
+    },
     onJumpToNow: () => setCurrentDate(new Date()),
   });
 
@@ -171,8 +205,11 @@ export default function App() {
             solarWindSpeed={data.solarWind?.speed || 400}
             currentDate={currentDate}
             focusedBody={focusedBody}
-            onBodyFocus={setFocusedBody}
+            onBodyFocus={handleBodyFocus}
             controlsRef={controlsRef}
+            surfaceMode={surfaceMode}
+            surfaceLocation={surfaceLocation}
+            mythicTheme={mythicTheme}
           />
           
           <OrbitControls
@@ -326,6 +363,17 @@ export default function App() {
               isMobile={isMobile}
             />
           </>
+        )}
+        
+        {/* Surface View Controls */}
+        {surfaceMode && focusedBody && (
+          <SurfaceViewControls
+            planetName={focusedBody}
+            currentLocation={surfaceLocation}
+            onLocationChange={handleSurfaceLocationChange}
+            onExit={handleExitSurface}
+            mythicTheme={mythicTheme}
+          />
         )}
         
         {/* UI Hidden Indicator (Press H to show) */}
