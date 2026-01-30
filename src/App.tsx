@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { LOCATIONS } from './data/locations';
 import { useAuroraData } from './hooks/useAuroraData';
 import { useSoundFX } from './hooks/useSoundFX';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { SolarSystemScene, HUDOverlay } from './components';
 import TelemetryDeck from './components/TelemetryDeck';
+import KeyboardHelp from './components/KeyboardHelp';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 export default function App() {
   const [selectedLocation, setSelectedLocation] = useState(LOCATIONS[0]);
@@ -13,9 +16,19 @@ export default function App() {
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const controlsRef = useRef<OrbitControlsImpl>(null);
   const { data, loading, error, visibility, refetch } = useAuroraData(selectedLocation);
   const { playBip, checkKpIncrease } = useSoundFX();
   const isOnline = !error;
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onTogglePlay: () => setIsPlaying(!isPlaying),
+    onSkipBackward: () => setCurrentDate(new Date(currentDate.getTime() - 24 * 60 * 60 * 1000)),
+    onSkipForward: () => setCurrentDate(new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)),
+    onResetView: () => setFocusedBody(null),
+    onJumpToNow: () => setCurrentDate(new Date()),
+  });
 
   useEffect(() => {
     if (data.kpIndex?.kpValue) {
@@ -62,17 +75,21 @@ export default function App() {
             currentDate={currentDate}
             focusedBody={focusedBody}
             onBodyFocus={setFocusedBody}
+            controlsRef={controlsRef}
           />
           
           <OrbitControls
+            ref={controlsRef}
             enableZoom={true}
             autoRotate={!focusedBody} // Disable auto-rotate when focused
             autoRotateSpeed={0.3}
-            minDistance={20}
+            minDistance={5} // Allow very close zoom ("street view")
             maxDistance={2000}
             maxPolarAngle={Math.PI / 1.5}
             minPolarAngle={Math.PI / 4}
             target={[0, 0, 0]}
+            enableDamping={true}
+            dampingFactor={0.05}
           />
         </Canvas>
       </div>
@@ -106,6 +123,8 @@ export default function App() {
         playbackSpeed={playbackSpeed}
         setPlaybackSpeed={setPlaybackSpeed}
       />
+      
+      <KeyboardHelp />
     </div>
   );
 }

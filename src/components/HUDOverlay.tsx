@@ -379,7 +379,7 @@ export function HUDOverlay({
         {/* Top Bar */}
         <div
           style={{ gridArea: 'header' }}
-          className="bg-slate-900/90 backdrop-blur-xl border-b border-white/20 px-6 py-5 flex items-center justify-between"
+          className="bg-black/20 backdrop-blur-md shadow-xl shadow-cyan-500/10 border-b border-white/20 px-6 py-5 flex items-center justify-between"
         >
           <div className="flex items-center gap-4 pl-2">
             <div className={`w-4 h-4 rounded-full ${isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
@@ -404,9 +404,9 @@ export function HUDOverlay({
         {/* Left Panel - Solar Wind & Magnetic Field */}
         <div
           style={{ gridArea: 'left-panel' }}
-          className="bg-slate-900/90 backdrop-blur-xl border-r border-white/20 overflow-y-auto p-6 space-y-4"
+          className="bg-black/20 backdrop-blur-md shadow-xl shadow-cyan-500/10 border-r border-white/20 overflow-y-auto p-6 space-y-4"
         >
-          <section className="p-6 rounded-lg border-2 border-white/20 bg-slate-900/90">
+          <section className="p-6 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-5">
               <Wind className="w-6 h-6 text-purple-400" />
               <h3 className="text-lg font-bold text-cyan-100 tracking-wider">SOLAR WIND</h3>
@@ -464,7 +464,7 @@ export function HUDOverlay({
                 className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded font-bold transition-all ${
                   scienceMode 
                     ? 'bg-purple-600/30 border-2 border-purple-400 text-purple-300' 
-                    : 'bg-slate-700/50 border-2 border-slate-500 text-slate-300 hover:bg-slate-600/50'
+                    : 'bg-black/30 border-2 border-slate-500 text-slate-300 hover:bg-slate-600/50'
                 }`}
               >
                 <Zap className="w-5 h-5" />
@@ -520,7 +520,7 @@ export function HUDOverlay({
             )}
           </section>
 
-          <section className="p-6 rounded-lg border-2 border-white/20 bg-slate-900/90">
+          <section className="p-6 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-5">
               <MapPin className="w-6 h-6 text-cyan-400" />
               <h3 className="text-lg font-bold text-cyan-100 tracking-wider">OBSERVATION POINT</h3>
@@ -601,12 +601,12 @@ export function HUDOverlay({
           )}
           
           {/* Historical Events Dropdown */}
-          <div className="p-4 rounded-lg border-2 border-white/20 bg-slate-900/90">
+          <div className="p-4 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
             <label className="block text-sm font-bold text-cyan-100 mb-2">TIME JUMP</label>
             <select
               value={selectedHistoricalEvent}
               onChange={(e) => jumpToHistoricalEvent(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-800 border-2 border-cyan-400/50 rounded text-white font-bold text-base"
+              className="w-full px-4 py-3 bg-black/40 backdrop-blur-sm border-2 border-cyan-400/50 rounded text-white font-bold text-base"
             >
               <option value="live">🔴 LIVE NOW</option>
               <optgroup label="EXTREME EVENTS">
@@ -638,7 +638,7 @@ export function HUDOverlay({
           
           {/* Mission Log Summary */}
           {missionLog.length > 0 && (
-            <div className="p-4 rounded-lg border-2 border-white/20 bg-slate-900/90">
+            <div className="p-4 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
               <div className="text-sm font-bold text-cyan-100 mb-2">
                 MISSION LOG ({missionLog.length} snapshots)
               </div>
@@ -666,9 +666,9 @@ export function HUDOverlay({
         {/* Right Panel - AI Predictions */}
         <div
           style={{ gridArea: 'right-panel' }}
-          className="bg-slate-900/90 backdrop-blur-xl border-l border-white/20 overflow-y-auto p-6 space-y-4"
+          className="bg-black/20 backdrop-blur-md shadow-xl shadow-cyan-500/10 border-l border-white/20 overflow-y-auto p-6 space-y-4"
         >
-          <section className="p-6 rounded-lg border-2 border-white/20 bg-slate-900/90">
+          <section className="p-6 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-5">
               <Activity className="w-6 h-6 text-green-400" />
               <h3 className="text-lg font-bold text-cyan-100 tracking-wider">KP INDEX</h3>
@@ -700,7 +700,7 @@ export function HUDOverlay({
             </div>
           </section>
 
-          <section className="p-6 rounded-lg border-2 border-white/20 bg-slate-900/90">
+          <section className="p-6 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-5">
               <Eye className="w-6 h-6 text-blue-400" />
               <h3 className="text-lg font-bold text-cyan-100 tracking-wider">AURORA PROBABILITY</h3>
@@ -729,7 +729,7 @@ export function HUDOverlay({
             </div>
           </section>
 
-          <section className="p-6 rounded-lg border-2 border-white/20 bg-slate-900/90">
+          <section className="p-6 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-5">
               <Radio className="w-6 h-6 text-orange-400" />
               <h3 className="text-lg font-bold text-cyan-100 tracking-wider">CME ARRIVAL</h3>
@@ -743,7 +743,7 @@ export function HUDOverlay({
             </div>
           </section>
 
-          <section className="p-6 rounded-lg border-2 border-white/20 bg-slate-900/90">
+          <section className="p-6 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-4">
               <Gauge className="w-6 h-6 text-cyan-400" />
               <h3 className="text-lg font-bold text-cyan-100 tracking-wider">3-DAY FORECAST</h3>
@@ -766,7 +766,7 @@ export function HUDOverlay({
         {/* Bottom Bar - Time Warp Controls */}
         <div
           style={{ gridArea: 'bottom' }}
-          className="bg-slate-900/90 backdrop-blur-xl border-t border-white/20 p-5"
+          className="bg-black/20 backdrop-blur-md shadow-xl shadow-cyan-500/10 border-t border-white/20 p-5"
         >
           <div className="flex items-center gap-3 mb-4">
             <Clock className="w-6 h-6 text-cyan-400" />

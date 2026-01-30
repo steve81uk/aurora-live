@@ -12,14 +12,17 @@
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@types/three": "^0.182.0",
     "astronomy-engine": "^2.1.19",
+    "bezier-easing": "^2.1.0",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.563.0",
     "rc-slider": "^11.1.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.7.0",
+    "stats.js": "^0.17.0",
     "three": "^0.182.0",
     "three-stdlib": "^2.36.1"
   },

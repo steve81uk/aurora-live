@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, RotateCcw, Maximize } from 'lucide-react';
+import Stats from 'stats.js';
 
 interface TelemetryDeckProps {
   currentDate: Date;
@@ -28,6 +29,8 @@ export default function TelemetryDeck({
 }: TelemetryDeckProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tickerText, setTickerText] = useState('');
+  const [showStats, setShowStats] = useState(false);
+  const statsRef = useRef<Stats | null>(null);
   const tickerOffset = useRef(0);
 
   // Playback effect
@@ -111,6 +114,42 @@ export default function TelemetryDeck({
     };
   }, [solarWindSpeed, kpValue]);
 
+  // FPS Counter Setup
+  useEffect(() => {
+    if (showStats && !statsRef.current) {
+      const stats = new Stats();
+      stats.showPanel(0); // 0: fps, 1: ms, 2: mb
+      stats.dom.style.position = 'fixed';
+      stats.dom.style.top = '10px';
+      stats.dom.style.right = '10px';
+      stats.dom.style.left = 'auto';
+      stats.dom.style.zIndex = '9999';
+      document.body.appendChild(stats.dom);
+      statsRef.current = stats;
+
+      const animate = () => {
+        stats.begin();
+        stats.end();
+        requestAnimationFrame(animate);
+      };
+      animate();
+    } else if (!showStats && statsRef.current) {
+      document.body.removeChild(statsRef.current.dom);
+      statsRef.current = null;
+    }
+  }, [showStats]);
+
+  // Fullscreen handler
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error('Fullscreen error:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   // Scrolling Ticker
   useEffect(() => {
     const facts = [
@@ -144,7 +183,7 @@ export default function TelemetryDeck({
   const threeDaysLater = Date.now() + 3 * 24 * 60 * 60 * 1000;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-32 bg-slate-900/95 backdrop-blur-xl border-t-2 border-cyan-400/50 pointer-events-auto">
+    <div className="fixed bottom-0 left-0 right-0 h-32 bg-black/20 backdrop-blur-md border-t border-white/10 shadow-lg shadow-purple-500/5 pointer-events-auto">
       <div className="grid grid-cols-3 h-full gap-4 p-4">
         {/* LEFT: Time Controls (LCARS Style) */}
         <div className="flex flex-col justify-center space-y-2">
@@ -236,16 +275,42 @@ export default function TelemetryDeck({
             </div>
           </div>
           
-          {/* Reset View Button */}
-          {focusedBody && (
+          {/* Action Buttons Row */}
+          <div className="mt-2 flex items-center gap-2">
+            {/* Reset View Button */}
+            {focusedBody && (
+              <button
+                onClick={onResetView}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/40 border-2 border-red-400 rounded text-red-300 font-bold text-sm transition-all hover:scale-105 active:scale-95"
+              >
+                <RotateCcw className="w-4 h-4" />
+                RESET VIEW
+              </button>
+            )}
+            
+            {/* Fullscreen Button */}
             <button
-              onClick={onResetView}
-              className="mt-2 flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/40 border-2 border-red-400 rounded text-red-300 font-bold text-sm"
+              onClick={toggleFullscreen}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600/20 hover:bg-purple-600/40 border-2 border-purple-400 rounded text-purple-300 font-bold text-sm transition-all hover:scale-105 active:scale-95"
+              title="Toggle Fullscreen (F11)"
             >
-              <RotateCcw className="w-4 h-4" />
-              RESET VIEW
+              <Maximize className="w-4 h-4" />
+              FULLSCREEN
             </button>
-          )}
+            
+            {/* FPS Counter Toggle */}
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className={`px-4 py-2 border-2 rounded font-bold text-sm transition-all hover:scale-105 active:scale-95 ${
+                showStats 
+                  ? 'bg-green-600/30 border-green-400 text-green-300' 
+                  : 'bg-cyan-600/20 hover:bg-cyan-600/40 border-cyan-400 text-cyan-300'
+              }`}
+              title="Toggle FPS Counter"
+            >
+              {showStats ? '✓ FPS' : 'FPS'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

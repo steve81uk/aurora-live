@@ -4,6 +4,10 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import * as Astronomy from 'astronomy-engine';
 import { CITIES, latLonToVector3, type City } from '../constants/cities';
+import { EffectComposer, Bloom, DepthOfField, ChromaticAberration, Vignette } from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
+import bezierEasing from 'bezier-easing';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 interface SolarSystemSceneProps {
   kpValue: number;
@@ -13,6 +17,7 @@ interface SolarSystemSceneProps {
   onPlanetSelect?: (planet: string | null) => void;
   focusedBody?: string | null;
   onBodyFocus?: (body: string | null) => void;
+  controlsRef?: React.RefObject<OrbitControlsImpl | null>;
 }
 
 interface PlanetConfig {
@@ -87,15 +92,22 @@ function OrbitTrail({ planetBody, color }: { planetBody: Astronomy.Body; color: 
   );
 }
 
-function Sun() {
+function Sun({ onBodyFocus }: { onBodyFocus?: (body: string | null) => void }) {
   const sunRef = useRef<THREE.Mesh>(null);
   const coronaRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
 
   useFrame((state) => {
     if (sunRef.current) {
       // Pulsing heartbeat effect
       const pulse = Math.sin(state.clock.getElapsedTime() * 0.8) * 0.08 + 1;
-      sunRef.current.scale.setScalar(pulse);
+      const hoverScale = hovered ? 1.05 : 1.0;
+      sunRef.current.scale.setScalar(pulse * hoverScale);
+      
+      // Hover glow
+      if (sunRef.current.material instanceof THREE.MeshStandardMaterial) {
+        sunRef.current.material.emissiveIntensity = hovered ? 1.8 : 1.5;
+      }
     }
     if (coronaRef.current) {
       const pulse = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.12 + 1;
@@ -105,8 +117,13 @@ function Sun() {
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Main Sun - Make it BIG (radius 8.0) with high emissive */}
-      <mesh ref={sunRef}>
+      {/* Main Sun - Make it BIG (radius 8.0) with high emissive - CLICKABLE */}
+      <mesh 
+        ref={sunRef}
+        onClick={() => onBodyFocus?.('Sun')}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      >
         <sphereGeometry args={[8.0, 64, 64]} />
         <meshStandardMaterial
           color="#FDB813"
@@ -175,16 +192,20 @@ function Planet({
   config, 
   kpValue, 
   currentDate, 
-  onClick 
+  onClick,
+  focusedBody
 }: { 
   config: PlanetConfig; 
   kpValue?: number; 
   currentDate: Date;
   onClick?: () => void;
+  focusedBody?: string | null;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const magnetosphereRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  const [distance, setDistance] = useState(0);
 
   useFrame((_state, delta) => {
     if (groupRef.current) {
@@ -199,6 +220,10 @@ function Planet({
       
       groupRef.current.position.set(x, y, z);
       
+      // Calculate distance from Sun in AU
+      const distanceAU = Math.sqrt(helio.x ** 2 + helio.y ** 2 + helio.z ** 2);
+      setDistance(distanceAU);
+      
       // Debug logging
       if (config.name === 'Earth') {
         console.log('🌍 Earth Position:', {
@@ -211,6 +236,11 @@ function Planet({
     // Rotate planet on its axis
     if (meshRef.current) {
       meshRef.current.rotation.y += 0.002;
+      
+      // Hover glow effect
+      if (meshRef.current.material instanceof THREE.MeshStandardMaterial) {
+        meshRef.current.material.emissiveIntensity = hovered ? 0.4 : 0.2;
+      }
     }
     
     // Rotate magnetosphere shell slowly
@@ -238,6 +268,15 @@ function Planet({
               console.log(`🪐 Clicked: ${config.name}`);
             }
           }}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            setHovered(true);
+            document.body.style.cursor = 'pointer';
+          }}
+          onPointerOut={() => {
+            setHovered(false);
+            document.body.style.cursor = 'default';
+          }}
         >
           <sphereGeometry args={[config.radius, 64, 64]} />
           <meshStandardMaterial
@@ -248,6 +287,33 @@ function Planet({
             metalness={0.2}
           />
         </mesh>
+        
+        {/* Holo-Card Info (visible only when focused) */}
+        {focusedBody === config.name && (
+          <Html position={[0, config.radius + 2, 0]} center>
+            <div className="bg-black/80 backdrop-blur-md border-2 border-cyan-400 rounded-lg p-4 text-white shadow-xl min-w-[200px]">
+              <h3 className="text-xl font-bold text-cyan-400 mb-2">{config.name}</h3>
+              <div className="text-sm space-y-1">
+                <p><span className="text-cyan-300">Distance:</span> {distance.toFixed(3)} AU</p>
+                <p><span className="text-cyan-300">Radius:</span> {config.radius.toFixed(1)} (scaled)</p>
+                {isEarth && (
+                  <button className="mt-3 w-full px-3 py-2 bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400 rounded text-sm font-bold transition-all">
+                    🌌 View Aurora
+                  </button>
+                )}
+              </div>
+            </div>
+          </Html>
+        )}
+        
+        {/* Tooltip on hover */}
+        {hovered && focusedBody !== config.name && (
+          <Html position={[0, config.radius + 1, 0]} center>
+            <div className="bg-black/60 backdrop-blur-sm border border-white/30 rounded px-3 py-1 text-white text-sm font-bold">
+              {config.name}
+            </div>
+          </Html>
+        )}
         
         {/* Magnetosphere Shell (Earth only) */}
         {isEarth && (
@@ -553,30 +619,108 @@ function SolarWindParticles({ speed }: { speed: number }) {
 }
 
 function StarField() {
-  const starGeometry = useMemo(() => {
-    const count = 10000;
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(count * 3);
+  const nearStarsRef = useRef<THREE.Points>(null);
+  const midStarsRef = useRef<THREE.Points>(null);
+  const farStarsRef = useRef<THREE.Points>(null);
+  
+  // Create 3 layers of stars with different counts and sizes
+  const starLayers = useMemo(() => {
+    const createLayer = (count: number, minRadius: number, maxRadius: number, size: number) => {
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(count * 3);
+      const sizes = new Float32Array(count);
 
-    for (let i = 0; i < count; i++) {
-      // Random positions in a large sphere
-      const radius = 200 + Math.random() * 100;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
+      for (let i = 0; i < count; i++) {
+        const radius = minRadius + Math.random() * (maxRadius - minRadius);
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
 
-      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = radius * Math.cos(phi);
-    }
+        positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        positions[i * 3 + 2] = radius * Math.cos(phi);
+        
+        // Random size variation for twinkling effect
+        sizes[i] = size * (0.5 + Math.random() * 0.5);
+      }
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    return geometry;
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+      return geometry;
+    };
+
+    return {
+      near: createLayer(3000, 150, 200, 0.3), // Closer, larger stars
+      mid: createLayer(4000, 250, 350, 0.2),  // Medium distance
+      far: createLayer(3000, 400, 500, 0.15)  // Distant, smaller stars
+    };
   }, []);
 
+  // Parallax animation
+  useFrame((state) => {
+    const cameraPos = state.camera.position;
+    
+    if (nearStarsRef.current) {
+      nearStarsRef.current.position.set(
+        cameraPos.x * 0.02,
+        cameraPos.y * 0.02,
+        cameraPos.z * 0.02
+      );
+    }
+    if (midStarsRef.current) {
+      midStarsRef.current.position.set(
+        cameraPos.x * 0.01,
+        cameraPos.y * 0.01,
+        cameraPos.z * 0.01
+      );
+    }
+    // Far stars don't move (parallax = 0)
+    
+    // Subtle twinkle effect (1% of stars per frame)
+    if (Math.random() < 0.01 && nearStarsRef.current) {
+      const geometry = nearStarsRef.current.geometry;
+      const sizes = geometry.attributes.size.array as Float32Array;
+      const idx = Math.floor(Math.random() * (sizes.length / 3));
+      sizes[idx] = 0.3 * (0.8 + Math.random() * 0.4);
+      geometry.attributes.size.needsUpdate = true;
+    }
+  });
+
   return (
-    <points geometry={starGeometry}>
-      <pointsMaterial size={0.2} color="#FFFFFF" transparent opacity={0.8} sizeAttenuation />
-    </points>
+    <>
+      {/* Near layer - brightest, largest */}
+      <points ref={nearStarsRef} geometry={starLayers.near}>
+        <pointsMaterial 
+          size={0.3} 
+          color="#FFFFFF" 
+          transparent 
+          opacity={0.9} 
+          sizeAttenuation
+          vertexColors={false}
+        />
+      </points>
+      
+      {/* Mid layer */}
+      <points ref={midStarsRef} geometry={starLayers.mid}>
+        <pointsMaterial 
+          size={0.2} 
+          color="#E0E0FF" 
+          transparent 
+          opacity={0.7} 
+          sizeAttenuation 
+        />
+      </points>
+      
+      {/* Far layer - dimmest */}
+      <points ref={farStarsRef} geometry={starLayers.far}>
+        <pointsMaterial 
+          size={0.15} 
+          color="#C0C0E0" 
+          transparent 
+          opacity={0.5} 
+          sizeAttenuation 
+        />
+      </points>
+    </>
   );
 }
 
@@ -693,12 +837,18 @@ export default function SolarSystemScene({
   solarWindSpeed, 
   currentDate = new Date(),
   focusedBody = null,
-  onBodyFocus = () => {}
+  onBodyFocus = () => {},
+  controlsRef
 }: SolarSystemSceneProps) {
   const { camera, size } = useThree();
   const showTrails = true; // TODO: Add toggle in UI
   const [earthPosition, setEarthPosition] = useState(new THREE.Vector3(0, 0, 0));
   const [planetPositions, setPlanetPositions] = useState<Map<string, THREE.Vector3>>(new Map());
+  const [cameraAnimating, setCameraAnimating] = useState(false);
+  const cameraStartPos = useRef(new THREE.Vector3());
+  const cameraStartTime = useRef(0);
+  
+  const easeInOutCubic = bezierEasing(0.65, 0, 0.35, 1); // Smooth easing curve
 
   useEffect(() => {
     const isMobile = size.width < 768;
@@ -741,26 +891,78 @@ export default function SolarSystemScene({
     setPlanetPositions(positions);
   }, [currentDate]);
   
-  // Camera chase view animation
-  useFrame(() => {
-    if (focusedBody && focusedBody !== 'reset') {
+  // Enhanced camera chase view animation with OrbitControls target
+  useFrame((state) => {
+    // Camera shake during severe storms (Kp > 7)
+    if (kpValue > 7) {
+      const shakeIntensity = ((kpValue - 7) / 2) * 0.01; // Scale 0-0.01 for Kp 7-9
+      const shakeX = (Math.random() - 0.5) * shakeIntensity;
+      const shakeY = (Math.random() - 0.5) * shakeIntensity;
+      const shakeZ = (Math.random() - 0.5) * shakeIntensity;
+      
+      camera.position.x += shakeX;
+      camera.position.y += shakeY;
+      camera.position.z += shakeZ;
+    }
+    
+    if (focusedBody && focusedBody !== 'reset' && controlsRef?.current) {
       const targetPos = focusedBody === 'Sun' 
         ? new THREE.Vector3(0, 0, 0)
         : planetPositions.get(focusedBody);
       
       if (targetPos) {
-        // Calculate chase position (behind planet, looking at Sun)
-        const sunDir = new THREE.Vector3(0, 0, 0).sub(targetPos).normalize();
+        // Smoothly animate OrbitControls target to planet position
+        const currentTarget = new THREE.Vector3(
+          controlsRef.current.target.x,
+          controlsRef.current.target.y,
+          controlsRef.current.target.z
+        );
+        currentTarget.lerp(targetPos, 0.05);
+        controlsRef.current.target.set(currentTarget.x, currentTarget.y, currentTarget.z);
+        
+        // Calculate initial camera position (behind planet, looking at it)
         const planet = PLANETS.find(p => p.name === focusedBody);
-        const distance = planet ? planet.radius * 8 : 40;
+        const distance = planet ? planet.radius * 3 : 30; // Closer view (3x instead of 8x)
         
-        const chasePos = targetPos.clone().add(sunDir.multiplyScalar(-distance));
-        chasePos.y += distance * 0.3; // Slight elevation
+        const sunDir = new THREE.Vector3(0, 0, 0).sub(targetPos).normalize();
+        const targetCameraPos = targetPos.clone().add(sunDir.multiplyScalar(-distance));
+        targetCameraPos.y += distance * 0.2; // Slight elevation
         
-        // Smooth LERP animation
-        camera.position.lerp(chasePos, 0.05);
-        camera.lookAt(targetPos);
+        // Only animate camera if starting a new focus
+        if (!cameraAnimating && camera.position.distanceTo(targetCameraPos) > 1) {
+          cameraStartPos.current.copy(camera.position);
+          cameraStartTime.current = state.clock.elapsedTime;
+          setCameraAnimating(true);
+        }
+        
+        // Animate with Bezier easing for 2 seconds, then release
+        if (cameraAnimating) {
+          const elapsed = state.clock.elapsedTime - cameraStartTime.current;
+          const duration = 2.0; // 2 second animation
+          
+          if (elapsed < duration) {
+            const t = easeInOutCubic(Math.min(elapsed / duration, 1));
+            camera.position.lerpVectors(cameraStartPos.current, targetCameraPos, t);
+            camera.lookAt(targetPos);
+          } else {
+            // Animation complete - user can now freely rotate/zoom
+            setCameraAnimating(false);
+          }
+        }
+        
+        controlsRef.current.update();
       }
+    } else if (focusedBody === 'reset' && controlsRef?.current) {
+      // Reset to heliocentric view
+      const homeTarget = new THREE.Vector3(0, 0, 0);
+      const currentTarget = new THREE.Vector3(
+        controlsRef.current.target.x,
+        controlsRef.current.target.y,
+        controlsRef.current.target.z
+      );
+      currentTarget.lerp(homeTarget, 0.05);
+      controlsRef.current.target.set(currentTarget.x, currentTarget.y, currentTarget.z);
+      controlsRef.current.update();
     }
   });
 
@@ -770,7 +972,7 @@ export default function SolarSystemScene({
       
       <StarField />
       
-      <Sun />
+      <Sun onBodyFocus={onBodyFocus} />
       
       {/* CME Shockwave when solar wind is fast */}
       <CMEShockwave speed={solarWindSpeed} visible={solarWindSpeed > 500} />
@@ -804,6 +1006,7 @@ export default function SolarSystemScene({
           onClick={() => {
             onBodyFocus(planet.name);
           }}
+          focusedBody={focusedBody}
         />
       ))}
 
@@ -815,6 +1018,38 @@ export default function SolarSystemScene({
       <L1TrajectoryLine earthPosition={earthPosition} />
 
       <SolarWindParticles speed={solarWindSpeed} />
+      
+      {/* Post-Processing Effects - Complete Suite */}
+      <EffectComposer>
+        {/* Bloom - Makes bright objects glow */}
+        <Bloom
+          intensity={kpValue > 5 ? 2.0 : 1.5} // Stronger during storms
+          luminanceThreshold={0.9}
+          luminanceSmoothing={0.9}
+          mipmapBlur
+        />
+        
+        {/* Depth of Field - Subtle bokeh */}
+        <DepthOfField
+          focusDistance={0}
+          focalLength={0.02}
+          bokehScale={2}
+          height={480}
+        />
+        
+        {/* Chromatic Aberration - Subtle lens imperfection */}
+        <ChromaticAberration
+          blendFunction={BlendFunction.NORMAL}
+          offset={new THREE.Vector2(0.002, 0.002)}
+        />
+        
+        {/* Vignette - Dark edges, intensifies during storms */}
+        <Vignette
+          offset={0.3}
+          darkness={kpValue > 6 ? 0.7 : 0.5}
+          blendFunction={BlendFunction.NORMAL}
+        />
+      </EffectComposer>
     </>
   );
 }
