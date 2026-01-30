@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Activity, Wind, TrendingUp, TrendingDown, Clock, AlertTriangle, Radio, Locate, Gauge, Eye, Bell, Camera, Zap } from 'lucide-react';
+import { MapPin, Activity, Wind, TrendingUp, TrendingDown, Clock, AlertTriangle, Radio, Locate, Gauge, Eye, Bell, Camera, Zap, Maximize } from 'lucide-react';
 import type { Location, KpIndexData, SolarWind, ForecastData, AuroraVisibility } from '../types/aurora';
 import { LocationSelector } from './LocationSelector';
 import { PeakTimer } from './PeakTimer';
@@ -379,23 +379,31 @@ export function HUDOverlay({
         {/* Top Bar */}
         <div
           style={{ gridArea: 'header' }}
-          className="bg-black/20 backdrop-blur-md shadow-xl shadow-cyan-500/10 border-b border-white/20 px-6 py-5 flex items-center justify-between"
+          className="bg-black/10 backdrop-blur-lg shadow-2xl shadow-cyan-500/10 border-b border-white/20 px-6 py-5 flex items-center justify-between"
         >
           <div className="flex items-center gap-4 pl-2">
             <div className={`w-4 h-4 rounded-full ${isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
-            <h1 className="text-3xl font-black text-white tracking-wider drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]">
+            <h1 className="text-3xl font-black text-white tracking-wider drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] [text-shadow:_0_0_15px_rgba(0,0,0,0.8)]">
               SOLAR ADMIRAL
             </h1>
           </div>
           
           <div className="flex items-center gap-4 pr-2">
+            <button
+              onClick={() => document.documentElement.requestFullscreen()}
+              className="p-2 bg-purple-600/20 hover:bg-purple-600/40 border-2 border-purple-400 rounded transition-all duration-200 hover:scale-105 active:scale-95"
+              title="Enter Fullscreen (F)"
+            >
+              <Maximize className="w-5 h-5 text-purple-300" />
+            </button>
+            
             <div className="flex items-center gap-2">
-              <span className="text-sm text-cyan-100 font-bold">RISK LEVEL:</span>
-              <span className={`px-4 py-1.5 rounded-full text-sm font-black ${status.bg} ${status.color} border-2 border-current`}>
+              <span className="text-sm text-cyan-100 font-bold [text-shadow:_0_0_10px_rgba(0,0,0,0.5)]">RISK LEVEL:</span>
+              <span className={`px-4 py-1.5 rounded-full text-sm font-black ${status.bg} ${status.color} border-2 border-current [text-shadow:_0_0_10px_rgba(0,0,0,0.8)]`}>
                 {status.level}
               </span>
             </div>
-            <div className="text-sm text-cyan-100 font-semibold">
+            <div className="text-sm text-cyan-100 font-semibold [text-shadow:_0_0_10px_rgba(0,0,0,0.5)]">
               {activeKpData?.timestamp && new Date(activeKpData.timestamp).toLocaleString()}
             </div>
           </div>
@@ -404,17 +412,17 @@ export function HUDOverlay({
         {/* Left Panel - Solar Wind & Magnetic Field */}
         <div
           style={{ gridArea: 'left-panel' }}
-          className="bg-black/20 backdrop-blur-md shadow-xl shadow-cyan-500/10 border-r border-white/20 overflow-y-auto p-6 space-y-4"
+          className="bg-black/10 backdrop-blur-lg shadow-xl shadow-cyan-500/10 border-r border-white/10 rounded-xl overflow-y-auto p-6 space-y-4"
         >
-          <section className="p-6 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
+          <section className="p-6 rounded-lg border border-white/10 shadow-lg bg-black/20 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-5">
               <Wind className="w-6 h-6 text-purple-400" />
-              <h3 className="text-lg font-bold text-cyan-100 tracking-wider">SOLAR WIND</h3>
+              <h3 className="text-lg font-bold text-cyan-100 tracking-wider [text-shadow:_0_0_10px_rgba(0,0,0,0.5)]">SOLAR WIND</h3>
             </div>
             
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-lg text-cyan-100 font-semibold">SPEED</span>
+                <span className="text-lg text-cyan-100 font-semibold [text-shadow:_0_0_10px_rgba(0,0,0,0.5)]">SPEED</span>
                 {hasPrevious && previousDataRef.current && (
                   <TrendIndicator
                     current={currentData.speed}
@@ -666,22 +674,22 @@ export function HUDOverlay({
         {/* Right Panel - AI Predictions */}
         <div
           style={{ gridArea: 'right-panel' }}
-          className="bg-black/20 backdrop-blur-md shadow-xl shadow-cyan-500/10 border-l border-white/20 overflow-y-auto p-6 space-y-4"
+          className="bg-black/10 backdrop-blur-lg shadow-xl shadow-cyan-500/10 border-l border-white/10 rounded-xl overflow-y-auto p-6 space-y-4"
         >
-          <section className="p-6 rounded-lg border border-white/20 shadow-lg bg-black/30 backdrop-blur-sm">
+          <section className="p-6 rounded-lg border border-white/10 shadow-lg bg-black/20 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-5">
               <Activity className="w-6 h-6 text-green-400" />
-              <h3 className="text-lg font-bold text-cyan-100 tracking-wider">KP INDEX</h3>
+              <h3 className="text-lg font-bold text-cyan-100 tracking-wider [text-shadow:_0_0_10px_rgba(0,0,0,0.5)]">KP INDEX</h3>
             </div>
             
             <div className="flex items-center justify-center mb-5">
               <div className="relative">
                 <CircularProgress value={currentData.kp} max={9} size={140} strokeWidth={12} color="#4ade80" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="text-5xl font-black text-white">
+                  <div className="text-5xl font-black text-white [text-shadow:_0_0_15px_rgba(0,0,0,0.8)]">
                     {currentData.kp.toFixed(1)}
                   </div>
-                  <div className="text-lg text-cyan-100 font-semibold">/ 9.0</div>
+                  <div className="text-lg text-cyan-100 font-semibold [text-shadow:_0_0_10px_rgba(0,0,0,0.5)]">/ 9.0</div>
                 </div>
               </div>
             </div>
@@ -695,7 +703,7 @@ export function HUDOverlay({
               </div>
             )}
 
-            <div className={`mt-4 px-4 py-3 rounded-full text-lg font-bold text-center ${status.color} border-2 border-current`}>
+            <div className={`mt-4 px-4 py-3 rounded-full text-lg font-bold text-center ${status.color} border-2 border-current [text-shadow:_0_0_10px_rgba(0,0,0,0.8)]`}>
               {status.text}
             </div>
           </section>

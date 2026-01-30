@@ -4,8 +4,6 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import * as Astronomy from 'astronomy-engine';
 import { CITIES, latLonToVector3, type City } from '../constants/cities';
-import { EffectComposer, Bloom, DepthOfField, ChromaticAberration, Vignette } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
 import bezierEasing from 'bezier-easing';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
@@ -99,53 +97,62 @@ function Sun({ onBodyFocus }: { onBodyFocus?: (body: string | null) => void }) {
 
   useFrame((state) => {
     if (sunRef.current) {
-      // Pulsing heartbeat effect
-      const pulse = Math.sin(state.clock.getElapsedTime() * 0.8) * 0.08 + 1;
-      const hoverScale = hovered ? 1.05 : 1.0;
+      // Subtle pulsing heartbeat effect
+      const pulse = Math.sin(state.clock.getElapsedTime() * 0.8) * 0.05 + 1;
+      const hoverScale = hovered ? 1.03 : 1.0;
       sunRef.current.scale.setScalar(pulse * hoverScale);
-      
-      // Hover glow
-      if (sunRef.current.material instanceof THREE.MeshStandardMaterial) {
-        sunRef.current.material.emissiveIntensity = hovered ? 1.8 : 1.5;
-      }
     }
     if (coronaRef.current) {
-      const pulse = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.12 + 1;
+      const pulse = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.08 + 1;
       coronaRef.current.scale.setScalar(pulse);
     }
   });
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Main Sun - Make it BIG (radius 8.0) with high emissive - CLICKABLE */}
+      {/* Main Sun - Arc Reactor Style (Gold Basic Material) */}
       <mesh 
         ref={sunRef}
-        onClick={() => onBodyFocus?.('Sun')}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
+        onClick={() => {
+          onBodyFocus?.(null); // Reset focus to null for heliocentric view
+          console.log('☀️ Sun clicked - Reset to solar system view');
+        }}
+        onPointerOver={() => {
+          setHovered(true);
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          setHovered(false);
+          document.body.style.cursor = 'default';
+        }}
       >
         <sphereGeometry args={[8.0, 64, 64]} />
-        <meshStandardMaterial
-          color="#FDB813"
-          emissive="#FF6B1A"
-          emissiveIntensity={1.5}
+        <meshBasicMaterial
+          color="#FFD700" // Gold
           toneMapped={false}
         />
       </mesh>
       
-      {/* Corona glow - larger, more intense */}
-      <mesh ref={coronaRef} scale={1.4}>
+      {/* Corona glow layer */}
+      <mesh ref={coronaRef} scale={1.3}>
         <sphereGeometry args={[8.0, 64, 64]} />
         <meshBasicMaterial
-          color="#FFA500"
+          color="#FFA500" // Orange
           transparent
-          opacity={0.3}
+          opacity={0.2}
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      <pointLight position={[0, 0, 0]} intensity={10} distance={1500} color="#FDB813" />
+      {/* Powerful point light to illuminate planets */}
+      <pointLight 
+        position={[0, 0, 0]} 
+        intensity={1500} 
+        distance={5000} 
+        decay={2} 
+        color="#FFD700" 
+      />
     </group>
   );
 }
@@ -315,14 +322,16 @@ function Planet({
           </Html>
         )}
         
-        {/* Magnetosphere Shell (Earth only) */}
+        {/* Holo-Shield Magnetosphere (Earth only) */}
         {isEarth && (
-          <mesh ref={magnetosphereRef} scale={1.3}>
+          <mesh ref={magnetosphereRef} scale={1.25}>
             <sphereGeometry args={[config.radius, 32, 32]} />
-            <meshStandardMaterial
+            <meshPhongMaterial
               color={magnetosphereColor}
+              emissive={magnetosphereColor}
+              emissiveIntensity={0.3}
               transparent
-              opacity={0.15}
+              opacity={0.2}
               side={THREE.DoubleSide}
               blending={THREE.AdditiveBlending}
             />
@@ -1018,38 +1027,6 @@ export default function SolarSystemScene({
       <L1TrajectoryLine earthPosition={earthPosition} />
 
       <SolarWindParticles speed={solarWindSpeed} />
-      
-      {/* Post-Processing Effects - Complete Suite */}
-      <EffectComposer>
-        {/* Bloom - Makes bright objects glow */}
-        <Bloom
-          intensity={kpValue > 5 ? 2.0 : 1.5} // Stronger during storms
-          luminanceThreshold={0.9}
-          luminanceSmoothing={0.9}
-          mipmapBlur
-        />
-        
-        {/* Depth of Field - Subtle bokeh */}
-        <DepthOfField
-          focusDistance={0}
-          focalLength={0.02}
-          bokehScale={2}
-          height={480}
-        />
-        
-        {/* Chromatic Aberration - Subtle lens imperfection */}
-        <ChromaticAberration
-          blendFunction={BlendFunction.NORMAL}
-          offset={new THREE.Vector2(0.002, 0.002)}
-        />
-        
-        {/* Vignette - Dark edges, intensifies during storms */}
-        <Vignette
-          offset={0.3}
-          darkness={kpValue > 6 ? 0.7 : 0.5}
-          blendFunction={BlendFunction.NORMAL}
-        />
-      </EffectComposer>
     </>
   );
 }

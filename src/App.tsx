@@ -83,7 +83,7 @@ export default function App() {
             enableZoom={true}
             autoRotate={!focusedBody} // Disable auto-rotate when focused
             autoRotateSpeed={0.3}
-            minDistance={5} // Allow very close zoom ("street view")
+            minDistance={1.1} // Street view: Very close zoom (1.1× planet radius)
             maxDistance={2000}
             maxPolarAngle={Math.PI / 1.5}
             minPolarAngle={Math.PI / 4}

@@ -183,7 +183,7 @@ export default function TelemetryDeck({
   const threeDaysLater = Date.now() + 3 * 24 * 60 * 60 * 1000;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-32 bg-black/20 backdrop-blur-md border-t border-white/10 shadow-lg shadow-purple-500/5 pointer-events-auto">
+    <div className="fixed bottom-0 left-0 right-0 h-32 bg-black/20 backdrop-blur-md border-t border-cyan-500/30 shadow-lg shadow-purple-500/5 pointer-events-auto z-50">
       <div className="grid grid-cols-3 h-full gap-4 p-4">
         {/* LEFT: Time Controls (LCARS Style) */}
         <div className="flex flex-col justify-center space-y-2">
