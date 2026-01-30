@@ -24,20 +24,20 @@ export default function ThemeSelector({ theme, onThemeChange }: ThemeSelectorPro
     <div className="relative">
       <button
         onClick={() => setShowThemeSelector(!showThemeSelector)}
-        className={`p-3 rounded-lg border-2 transition-all duration-200 hover:scale-110 active:scale-95 ${
+        className={`p-1.5 rounded-md border transition-all duration-200 text-xs ${
           showThemeSelector 
-            ? `${colors.bg} ${colors.border} ${colors.glow} shadow-lg` 
-            : 'bg-black/30 border-white/20 hover:bg-black/50'
+            ? `${colors.bg} ${colors.border} ${colors.glow} shadow-md` 
+            : 'bg-black/20 border-white/10 hover:bg-black/30'
         }`}
         title="Change HUD Theme"
       >
-        {currentTheme && <currentTheme.icon className={colors.text} size={24} />}
+        {currentTheme && <currentTheme.icon className={colors.text} size={16} />}
       </button>
 
-      {/* Theme Dropdown */}
+      {/* Theme Dropdown (Minimal) */}
       {showThemeSelector && (
-        <div className="absolute right-0 top-16 bg-black/90 backdrop-blur-xl border border-white/30 rounded-lg p-2 min-w-[200px] shadow-2xl">
-          <div className="text-xs text-cyan-300 font-bold mb-2 px-2">HUD THEME</div>
+        <div className="absolute right-0 top-10 bg-black/80 backdrop-blur-lg border border-white/20 rounded-md p-1.5 min-w-[160px] shadow-xl">
+          <div className="text-[10px] text-cyan-300 font-bold mb-1 px-2">HUD THEME</div>
           {themes.map(t => {
             const tColors = themeColors[t.id];
             return (
@@ -47,16 +47,16 @@ export default function ThemeSelector({ theme, onThemeChange }: ThemeSelectorPro
                   onThemeChange(t.id);
                   setShowThemeSelector(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded transition-all duration-200 ${
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded transition-all duration-200 ${
                   theme === t.id 
                     ? `${tColors.bg} ${tColors.text}` 
-                    : 'text-white/70 hover:bg-white/10'
+                    : 'text-white/60 hover:bg-white/10'
                 }`}
               >
-                <t.icon className="w-5 h-5" />
-                <span className="text-sm font-semibold">{t.name}</span>
+                <t.icon className="w-4 h-4" />
+                <span className="text-xs font-semibold">{t.name}</span>
                 {theme === t.id && (
-                  <div className="ml-auto w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                 )}
               </button>
             );

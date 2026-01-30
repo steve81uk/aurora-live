@@ -166,20 +166,20 @@ export default function App() {
       {/* ========== LAYER 1: THE UI OVERLAY ========== */}
       <div className="absolute inset-0 z-10 pointer-events-none">
         
-        {/* Helmet Visor Effects */}
+        {/* Helmet Visor Effects (Ultra Minimal) */}
         {/* Vignette Effect (Helmet Edge Darkness) */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.7) 100%)',
+            background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0.4) 100%)',
             mixBlendMode: 'multiply'
           }}
         />
 
-        {/* Scanlines (Fighter & Commander Themes) */}
+        {/* Scanlines (Fighter & Commander Themes) - Ultra Subtle */}
         {(hudTheme === 'fighter' || hudTheme === 'commander') && (
           <div 
-            className="absolute inset-0 opacity-10 pointer-events-none animate-pulse"
+            className="absolute inset-0 opacity-5 pointer-events-none animate-pulse"
             style={{
               background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.1) 2px, rgba(0,255,255,0.1) 4px)',
               animationDuration: '3s'
@@ -187,30 +187,30 @@ export default function App() {
           />
         )}
 
-        {/* Center Crosshair (Fighter & Commander Themes) */}
+        {/* Center Crosshair (Fighter & Commander Themes) - Ultra Subtle */}
         {(hudTheme === 'fighter' || hudTheme === 'commander') && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <svg width="60" height="60" viewBox="0 0 60 60" className="opacity-40">
-              <circle cx="30" cy="30" r="28" fill="none" stroke="cyan" strokeWidth="1" />
-              <line x1="30" y1="5" x2="30" y2="18" stroke="cyan" strokeWidth="1.5" />
-              <line x1="30" y1="42" x2="30" y2="55" stroke="cyan" strokeWidth="1.5" />
-              <line x1="5" y1="30" x2="18" y2="30" stroke="cyan" strokeWidth="1.5" />
-              <line x1="42" y1="30" x2="55" y2="30" stroke="cyan" strokeWidth="1.5" />
-              <circle cx="30" cy="30" r="2" fill="cyan" />
+            <svg width="40" height="40" viewBox="0 0 60 60" className="opacity-20">
+              <circle cx="30" cy="30" r="28" fill="none" stroke="cyan" strokeWidth="0.5" />
+              <line x1="30" y1="5" x2="30" y2="18" stroke="cyan" strokeWidth="0.8" />
+              <line x1="30" y1="42" x2="30" y2="55" stroke="cyan" strokeWidth="0.8" />
+              <line x1="5" y1="30" x2="18" y2="30" stroke="cyan" strokeWidth="0.8" />
+              <line x1="42" y1="30" x2="55" y2="30" stroke="cyan" strokeWidth="0.8" />
+              <circle cx="30" cy="30" r="1.5" fill="cyan" />
             </svg>
           </div>
         )}
 
-        {/* Arc Reactor Center (Iron Man Theme) */}
+        {/* Arc Reactor Center (Iron Man Theme) - Ultra Subtle */}
         {hudTheme === 'ironman' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="relative w-20 h-20 animate-pulse">
-              <div className="absolute inset-0 rounded-full bg-cyan-400/20 blur-xl" />
-              <svg width="80" height="80" viewBox="0 0 80 80">
-                <circle cx="40" cy="40" r="35" fill="none" stroke="url(#arcGradient)" strokeWidth="2" />
-                <circle cx="40" cy="40" r="28" fill="none" stroke="cyan" strokeWidth="1" opacity="0.5" />
-                <circle cx="40" cy="40" r="20" fill="none" stroke="cyan" strokeWidth="1.5" opacity="0.8" />
-                <circle cx="40" cy="40" r="3" fill="cyan" />
+            <div className="relative w-16 h-16 animate-pulse">
+              <div className="absolute inset-0 rounded-full bg-cyan-400/10 blur-lg" />
+              <svg width="64" height="64" viewBox="0 0 80 80" className="opacity-30">
+                <circle cx="40" cy="40" r="35" fill="none" stroke="url(#arcGradient)" strokeWidth="1" />
+                <circle cx="40" cy="40" r="28" fill="none" stroke="cyan" strokeWidth="0.5" opacity="0.3" />
+                <circle cx="40" cy="40" r="20" fill="none" stroke="cyan" strokeWidth="0.8" opacity="0.5" />
+                <circle cx="40" cy="40" r="2" fill="cyan" />
                 <defs>
                   <radialGradient id="arcGradient">
                     <stop offset="0%" stopColor="cyan" />
@@ -222,38 +222,38 @@ export default function App() {
           </div>
         )}
 
-        {/* NASA-style Circular Frame (Astronaut Theme) */}
+        {/* NASA-style Circular Frame (Astronaut Theme) - Ultra Subtle */}
         {hudTheme === 'astronaut' && (
           <div className="absolute inset-0 pointer-events-none">
-            <svg className="w-full h-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <ellipse cx="50" cy="50" rx="48" ry="45" fill="none" stroke="white" strokeWidth="0.2" />
-              <ellipse cx="50" cy="50" rx="46" ry="43" fill="none" stroke="white" strokeWidth="0.1" />
+            <svg className="w-full h-full opacity-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <ellipse cx="50" cy="50" rx="48" ry="45" fill="none" stroke="white" strokeWidth="0.15" />
+              <ellipse cx="50" cy="50" rx="46" ry="43" fill="none" stroke="white" strokeWidth="0.08" />
             </svg>
           </div>
         )}
 
-        {/* View Switcher & Controls - Top-Left */}
-        <div className="absolute top-4 left-4 flex gap-2 pointer-events-auto">
+        {/* View Switcher & Controls - Top-Left (Minimal) */}
+        <div className="absolute top-2 left-2 flex gap-1 pointer-events-auto">
           <button
             onClick={() => handleViewChange('analyst')}
-            className="flex items-center gap-2 px-4 py-3 bg-purple-600/40 backdrop-blur-lg border border-purple-400 rounded-lg hover:bg-purple-600/60 transition-all duration-200 hover:scale-105 active:scale-95"
+            className="flex items-center gap-1 px-2 py-1.5 bg-purple-600/20 backdrop-blur-md border border-purple-400/30 rounded-md hover:bg-purple-600/40 transition-all duration-200 text-xs"
             title="Switch to Mission Control"
           >
-            <Monitor className="w-5 h-5 text-purple-300" />
-            <span className="text-sm font-bold text-purple-300">MISSION CONTROL</span>
+            <Monitor className="w-3 h-3 text-purple-300" />
+            <span className="font-semibold text-purple-300 hidden md:inline">MISSION CONTROL</span>
           </button>
 
           <button
             onClick={toggleFullscreen}
-            className="p-3 bg-black/40 backdrop-blur-lg border border-white/20 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-105 active:scale-95"
+            className="p-1.5 bg-black/20 backdrop-blur-md border border-white/10 rounded-md hover:bg-white/10 transition-all duration-200"
             title="Toggle Fullscreen (F key)"
           >
-            <Maximize className="w-5 h-5 text-white" />
+            <Maximize className="w-3 h-3 text-white" />
           </button>
         </div>
 
-        {/* Theme Selector - Top-Right */}
-        <div className="absolute top-4 right-4 pointer-events-auto">
+        {/* Theme Selector - Top-Right (Minimal) */}
+        <div className="absolute top-2 right-2 pointer-events-auto">
           <ThemeSelector theme={hudTheme} onThemeChange={setHudTheme} />
         </div>
 

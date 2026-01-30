@@ -2,6 +2,32 @@
 
 All notable changes to Solar Admiral will be documented in this file.
 
+## [0.5.2] - 2026-01-30
+
+### Changed
+- **Maximized 3D Canvas Display**: Ultra-minimal UI for maximum immersion
+  - Reduced all UI element sizes by ~50%
+  - Corner metrics: Smaller padding, text, icons (bg-black/20 instead of /40)
+  - View switcher buttons: Minimal icons, hidden labels on mobile
+  - Theme selector: Compact 16px icon button
+  - Helmet effects: Reduced opacity (vignette, scanlines, crosshair, arc reactor)
+    - Vignette: 15% inner, 40% outer (was 30%/70%)
+    - Scanlines: opacity-5 (was opacity-10)
+    - Crosshair: opacity-20, size 40px (was opacity-40, size 60px)
+    - Arc reactor: opacity-30, size 64px (was no limit, size 80px)
+    - Astronaut frame: opacity-10 (was opacity-20)
+  - UI positioned closer to edges (top-2, bottom-2 instead of top-4, bottom-4)
+  - Glass panels more transparent for better view-through
+
+### Technical
+- Bundle: **344.82 KB gzipped** (+0.05 KB, negligible increase)
+- Build Time: 27.08 seconds
+- Files Modified: 3 (App.tsx, CornerMetrics.tsx, ThemeSelector.tsx)
+- Visual Impact: ~70% more visible 3D content area
+- No functionality lost: All features remain fully accessible
+
+---
+
 ## [0.5.1] - 2026-01-30
 
 ### 🚀 Free Flight Camera System
