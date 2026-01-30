@@ -12,6 +12,7 @@ import { ShootingStars } from './components/ShootingStars';
 import { HeimdallProtocol } from './components/HeimdallProtocol';
 import { MythicThemeSelector } from './components/MythicThemeSelector';
 import { SurfaceViewControls } from './components/SurfaceViewControls';
+import { DataStream } from './components/DataStream';
 import ThemeSelector from './components/ThemeSelector';
 import { type HUDTheme } from './components/HelmetHUD';
 import CornerMetrics from './components/CornerMetrics';
@@ -374,6 +375,13 @@ export default function App() {
             onExit={handleExitSurface}
             mythicTheme={mythicTheme}
           />
+        )}
+        
+        {/* Neural Data Stream - Bottom */}
+        {uiVisible && !surfaceMode && (
+          <div className="absolute bottom-2 left-2 right-2 pointer-events-auto">
+            <DataStream mythicTheme={mythicTheme} />
+          </div>
         )}
         
         {/* UI Hidden Indicator (Press H to show) */}
