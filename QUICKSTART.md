@@ -1,8 +1,43 @@
-# 🚀 QUICK START GUIDE - Space Weather Forecasting System
+# 🚀 QUICK START GUIDE - Solar Admiral
 
-## ⚡ 60-Second Setup
+**Interactive 3D Space Weather & Solar System Visualization**
+
+## ⚡ 30-Second Setup (Web App)
 
 ### 1. Prerequisites Check
+```bash
+# Check Node.js (18+ required)
+node --version
+
+# Check npm (9+ required)
+npm --version
+```
+
+### 2. Install & Run
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Open browser to http://localhost:5173
+```
+
+### 3. Production Build (Optional)
+```bash
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+---
+
+## 📦 Alternative: PowerShell Version
+
+### For command-line enthusiasts:
 ```powershell
 # Check Python
 python --version
@@ -11,30 +46,69 @@ python --version
 # Check requests library
 pip show requests
 # If not installed: pip install requests
-```
 
-### 2. File Verification
-```powershell
-# You should have these files:
-SpaceWeatherCore.py    # Python backend
-AuroraHUD.ps1          # PowerShell dashboard
-```
-
-### 3. Run the System
-```powershell
-# Option A: Full auto-refreshing dashboard
+# Run PowerShell dashboard
 .\AuroraHUD.ps1
 
-# Option B: One-time data fetch
+# OR: One-time data fetch
 python SpaceWeatherCore.py
 
-# Option C: Test without loop
+# OR: Test without loop
 .\Test-AuroraHUD.ps1
 ```
 
 ---
 
-## 📊 What You'll See
+## 🎮 Web App Features (v0.5.0 - NEW!)
+
+### Interactive Solar System
+- **Click any planet** → Smooth camera chase view
+- **Click "RESET VIEW"** → Return to overview
+- **Scroll wheel** → Zoom in/out
+- **Click + drag** → Rotate view
+
+### TelemetryDeck Mission Control (Bottom Bar)
+- **⏪ Skip Back** → Jump 24 hours into past
+- **⏸️ Play/Pause** → Toggle time animation
+- **⏩ Skip Forward** → Jump 24 hours into future
+- **NOW** → Return to present
+- **Speed Selector** → 1x, 10x, 100x, 1000x playback
+- **Timeline Slider** → Drag to any date (±7 days)
+- **Solar Heartbeat Visualizer** → Live sine wave (color changes with activity)
+- **System Ticker** → Scrolling status updates
+
+### Left Panel Controls
+| Feature | What It Does |
+|---------|--------------|
+| **TEST ALERT** | Test browser notifications |
+| **TIME JUMP** | Navigate to historical storms (Carrington 1859, Quebec 1989, etc.) |
+| **Science Mode** | Toggle Simple/Advanced metrics (5 extra calculations) |
+| **SNAPSHOT** | Capture current conditions |
+| **Mission Log** | View last 5 snapshots |
+
+### Historical Events Available
+**Extreme Events (Kp = 9):**
+- Carrington Event (1859) - Strongest ever
+- Quebec Blackout (1989) - 6M without power
+- Halloween Storm (2003) - Satellite destroyed
+- Bastille Day (2000) - X5.7 flare
+
+**Major Storms (Kp = 8):**
+- May 2024 Superstorm - First G5 in 20 years
+- Sept 2017 - X9.3 flare
+- Jan 2005 - GPS disruptions
+- St. Patrick's Day 2015 - G4 storm
+
+### Visual Effects
+- **CME Shockwave**: Expanding red sphere when solar wind > 500 km/s
+- **Magnetosphere Shell**: Green (calm) or Purple (storm) around Earth
+- **Sun Pulsing**: Heartbeat animation
+- **Volumetric Aurora**: Color-changing curtains
+- **ISS & DSCOVR**: Satellites with realistic orbits
+
+---
+
+## 📊 PowerShell Dashboard (Classic)
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
