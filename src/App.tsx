@@ -25,6 +25,7 @@ export default function App() {
   const [hudTheme, setHudTheme] = useState<HUDTheme>('fighter');
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('explorer');
+  const [uiVisible, setUiVisible] = useState(true);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { data } = useAuroraData(selectedLocation);
   const { checkKpIncrease } = useSoundFX();
@@ -70,6 +71,17 @@ export default function App() {
     onResetView: () => setFocusedBody(null),
     onJumpToNow: () => setCurrentDate(new Date()),
   });
+
+  // UI Toggle with H key
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'h' || e.key === 'H') {
+        setUiVisible(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   useEffect(() => {
     if (data.kpIndex?.kpValue) {
@@ -151,10 +163,10 @@ export default function App() {
             enableZoom={true}
             autoRotate={!focusedBody}
             autoRotateSpeed={0.3}
-            minDistance={focusedBody && focusedBody !== 'reset' ? 1.2 : 15}
+            minDistance={focusedBody && focusedBody !== 'reset' ? 0.1 : 15}
             maxDistance={focusedBody && focusedBody !== 'reset' ? 500 : 2000}
-            maxPolarAngle={Math.PI / 1.5}
-            minPolarAngle={Math.PI / 4}
+            maxPolarAngle={Math.PI} // Allow full 360° up/down (removed restriction)
+            minPolarAngle={0} // Allow looking straight up
             target={[0, 0, 0]}
             enableDamping={true}
             dampingFactor={0.05}
@@ -232,49 +244,74 @@ export default function App() {
           </div>
         )}
 
-        {/* View Switcher & Controls - Top-Left (Minimal) */}
-        <div className="absolute top-2 left-2 flex gap-1 pointer-events-auto">
-          <button
-            onClick={() => handleViewChange('analyst')}
-            className="flex items-center gap-1 px-2 py-1.5 bg-purple-600/20 backdrop-blur-md border border-purple-400/30 rounded-md hover:bg-purple-600/40 transition-all duration-200 text-xs"
-            title="Switch to Mission Control"
-          >
-            <Monitor className="w-3 h-3 text-purple-300" />
-            <span className="font-semibold text-purple-300 hidden md:inline">MISSION CONTROL</span>
-          </button>
+        {/* UI Elements (Toggle with H key) */}
+        {uiVisible && (
+          <>
+            {/* View Switcher & Controls - Top-Left (Minimal) */}
+            <div className="absolute top-2 left-2 flex gap-1 pointer-events-auto">
+              <button
+                onClick={() => handleViewChange('analyst')}
+                className="flex items-center gap-1 px-2 py-1.5 bg-purple-600/20 backdrop-blur-md border border-purple-400/30 rounded-md hover:bg-purple-600/40 transition-all duration-200 text-xs"
+                title="Switch to Mission Control"
+              >
+                <Monitor className="w-3 h-3 text-purple-300" />
+                <span className="font-semibold text-purple-300 hidden md:inline">MISSION CONTROL</span>
+              </button>
 
-          <button
-            onClick={toggleFullscreen}
-            className="p-1.5 bg-black/20 backdrop-blur-md border border-white/10 rounded-md hover:bg-white/10 transition-all duration-200"
-            title="Toggle Fullscreen (F key)"
-          >
-            <Maximize className="w-3 h-3 text-white" />
-          </button>
-        </div>
+              <button
+                onClick={toggleFullscreen}
+                className="p-1.5 bg-black/20 backdrop-blur-md border border-white/10 rounded-md hover:bg-white/10 transition-all duration-200"
+                title="Toggle Fullscreen (F key)"
+              >
+                <Maximize className="w-3 h-3 text-white" />
+              </button>
+              
+              <button
+                onClick={() => setUiVisible(false)}
+                className="p-1.5 bg-black/20 backdrop-blur-md border border-white/10 rounded-md hover:bg-white/10 transition-all duration-200"
+                title="Hide UI (H key)"
+              >
+                <span className="text-[10px] text-white font-mono">H</span>
+              </button>
+            </div>
 
-        {/* Theme Selector - Top-Right (Minimal) */}
-        <div className="absolute top-2 right-2 pointer-events-auto">
-          <ThemeSelector theme={hudTheme} onThemeChange={setHudTheme} />
-        </div>
+            {/* Theme Selector - Top-Right (Minimal) */}
+            <div className="absolute top-2 right-2 pointer-events-auto">
+              <ThemeSelector theme={hudTheme} onThemeChange={setHudTheme} />
+            </div>
 
-        {/* Corner Metrics */}
-        <CornerMetrics
-          theme={hudTheme}
-          currentDate={currentDate}
-          kpValue={data.kpIndex?.kpValue || 3}
-          solarWindSpeed={data.solarWind?.speed || 400}
-          focusedBody={focusedBody}
-          isMobile={isMobile}
-        />
+            {/* Corner Metrics */}
+            <CornerMetrics
+              theme={hudTheme}
+              currentDate={currentDate}
+              kpValue={data.kpIndex?.kpValue || 3}
+              solarWindSpeed={data.solarWind?.speed || 400}
+              focusedBody={focusedBody}
+              isMobile={isMobile}
+            />
 
-        {/* Mobile Data Panel */}
-        <MobileDataPanel
-          theme={hudTheme}
-          kpData={data.kpIndex || undefined}
-          solarWind={data.solarWind || undefined}
-          selectedLocation={selectedLocation}
-          isMobile={isMobile}
-        />
+            {/* Mobile Data Panel */}
+            <MobileDataPanel
+              theme={hudTheme}
+              kpData={data.kpIndex || undefined}
+              solarWind={data.solarWind || undefined}
+              selectedLocation={selectedLocation}
+              isMobile={isMobile}
+            />
+          </>
+        )}
+        
+        {/* UI Hidden Indicator (Press H to show) */}
+        {!uiVisible && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-auto">
+            <button
+              onClick={() => setUiVisible(true)}
+              className="px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/20 rounded-full hover:bg-black/60 transition-all duration-200 text-xs font-mono text-white/70 hover:text-white animate-pulse"
+            >
+              Press H to show UI
+            </button>
+          </div>
+        )}
 
         {/* Keyboard Help */}
         <KeyboardHelp />

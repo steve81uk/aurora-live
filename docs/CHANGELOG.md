@@ -2,6 +2,50 @@
 
 All notable changes to Solar Admiral will be documented in this file.
 
+## [0.6.0] - 2026-01-30
+
+### Added
+- **Realistic Earth Texture**: NASA Blue Marble texture applied to Earth
+  - High-resolution 2048x1024 Earth day texture
+  - Loaded via Three.js TextureLoader from NASA repository
+  - Visible continents, oceans, clouds
+- **Street-Level View**: Extreme close-up capability
+  - `minDistance: 0.1` when focused (was 1.2)
+  - Can zoom almost to planet surface
+  - Look up from surface to see Sun and stars
+- **Full Camera Freedom**: Removed polar angle restrictions
+  - `maxPolarAngle: Math.PI` (was Math.PI/1.5)
+  - `minPolarAngle: 0` (was Math.PI/4)
+  - Can look straight up or down from any angle
+  - 360° rotation in all directions
+- **UI Toggle Feature**: Hide/show all UI elements
+  - Press **H key** to toggle UI visibility
+  - Button in top-left corner also toggles
+  - "Press H to show UI" indicator when hidden
+  - Maximizes 3D view to fullscreen
+
+### Changed
+- Earth rendering: Texture-mapped sphere instead of solid color
+- Camera controls: Full 360° freedom (up/down/around)
+- Zoom limits: 0.1 to 500 when focused (extreme close-up)
+- UI can now be completely hidden for pure 3D experience
+
+### Technical
+- Bundle: **345.08 KB gzipped** (+0.26 KB)
+- Build Time: 15.88 seconds
+- Earth texture: Loaded from external CDN (no local storage)
+- Files Modified: 2 (SolarSystemScene.tsx, App.tsx)
+
+### User Experience
+1. **Click Earth** → Camera swoops in
+2. **Zoom in** → Get close to surface (street level)
+3. **Look around** → Full 360° freedom
+4. **Look up** → See Sun, stars, other planets
+5. **Press H** → Hide all UI for pure immersion
+6. **Press H again** → Show UI controls
+
+---
+
 ## [0.5.2] - 2026-01-30
 
 ### Changed

@@ -50,7 +50,10 @@
 - **Real Astronomy**: Powered by `astronomy-engine` for accurate planetary positions
 - **Free Flight Camera**: Click planets → 2s smooth animation → **Full 360° control unlocked!**
   - Spin freely around any planet after animation completes
-  - Extreme zoom: Get as close as 1.2× planet radius ("street view")
+  - **Street-Level Zoom**: Get as close as 0.1× planet radius (extreme close-up)
+  - Full polar angle freedom: Look straight up/down from any position
+  - **Realistic Earth Texture**: NASA Blue Marble with continents, oceans, clouds
+  - Look up from planet surface to see Sun and other planets
   - EXIT ORBIT button for easy return to solar system view
 - **Clickable Planets**: Focus camera on any celestial body with smooth Bezier easing
 - **8 Planets + Moon**: Mercury through Neptune with realistic orbits and axial tilts
@@ -80,6 +83,7 @@
 - **← / →**: Skip 24 hours backward/forward
 - **R**: Reset camera view
 - **N**: Jump to NOW
+- **H**: Hide/show UI for fullscreen 3D view
 - **F**: Fullscreen toggle
 - **Esc**: Cancel/Close modals
 - **?**: Show keyboard help
@@ -93,7 +97,7 @@
 - **Physics**: astronomy-engine for planetary calculations
 - **Styling**: TailwindCSS 4.1 with custom glass morphism
 - **Build Tool**: Vite 7.3 (12-24s production builds)
-- **Bundle**: 344 KB gzipped (optimized for performance)
+- **Bundle**: 345 KB gzipped (optimized for performance)
 
 ---
 

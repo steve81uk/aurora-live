@@ -213,6 +213,16 @@ function Planet({
   const magnetosphereRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   const [distance, setDistance] = useState(0);
+  
+  // Load Earth texture
+  const earthTexture = useMemo(() => {
+    if (config.name === 'Earth') {
+      const loader = new THREE.TextureLoader();
+      // Using free NASA Blue Marble texture
+      return loader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg');
+    }
+    return null;
+  }, [config.name]);
 
   useFrame((_state, delta) => {
     if (groupRef.current) {
@@ -286,13 +296,21 @@ function Planet({
           }}
         >
           <sphereGeometry args={[config.radius, 64, 64]} />
-          <meshStandardMaterial
-            color={config.color}
-            emissive={config.emissive || config.color}
-            emissiveIntensity={0.2}
-            roughness={0.7}
-            metalness={0.2}
-          />
+          {config.name === 'Earth' && earthTexture ? (
+            <meshStandardMaterial
+              map={earthTexture}
+              roughness={0.8}
+              metalness={0.2}
+            />
+          ) : (
+            <meshStandardMaterial
+              color={config.color}
+              emissive={config.emissive || config.color}
+              emissiveIntensity={0.2}
+              roughness={0.7}
+              metalness={0.2}
+            />
+          )}
         </mesh>
         
         {/* Holo-Card Info (visible only when focused) */}
