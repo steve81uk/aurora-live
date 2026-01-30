@@ -5,21 +5,33 @@ import { LOCATIONS } from './data/locations';
 import { useAuroraData } from './hooks/useAuroraData';
 import { useSoundFX } from './hooks/useSoundFX';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { SolarSystemScene, HUDOverlay } from './components';
-import TelemetryDeck from './components/TelemetryDeck';
+import { SolarSystemScene } from './components';
+import HelmetHUD, { type HUDTheme } from './components/HelmetHUD';
+import CornerMetrics from './components/CornerMetrics';
+import MobileDataPanel from './components/MobileDataPanel';
 import KeyboardHelp from './components/KeyboardHelp';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 export default function App() {
-  const [selectedLocation, setSelectedLocation] = useState(LOCATIONS[0]);
+  const [selectedLocation] = useState(LOCATIONS[0]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [hudTheme, setHudTheme] = useState<HUDTheme>('fighter');
+  const [isMobile, setIsMobile] = useState(false);
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const { data, loading, error, visibility, refetch } = useAuroraData(selectedLocation);
-  const { playBip, checkKpIncrease } = useSoundFX();
-  const isOnline = !error;
+  const { data } = useAuroraData(selectedLocation);
+  const { checkKpIncrease } = useSoundFX();
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -36,95 +48,69 @@ export default function App() {
     }
   }, [data.kpIndex?.kpValue, checkKpIncrease]);
 
-  const handleLocationChange = (location: typeof LOCATIONS[0]) => {
-    setSelectedLocation(location);
-    playBip();
-  };
-
-  const handleRefresh = () => {
-    refetch();
-    playBip();
-  };
-  
-  const handleResetView = () => {
-    setFocusedBody(null);
-    playBip();
-  };
-
   return (
-    <div className="relative w-screen h-screen bg-black overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <Canvas
-          camera={{ position: [100, 40, 100], fov: 50, far: 5000 }}
-          gl={{ antialias: true }}
-          shadows
-        >
-          <Stars
-            radius={200}
-            depth={100}
-            count={8000}
-            factor={6}
-            saturation={0}
-            fade
-            speed={0.5}
-          />
-          
-          <SolarSystemScene
-            kpValue={data.kpIndex?.kpValue || 3}
-            solarWindSpeed={data.solarWind?.speed || 400}
-            currentDate={currentDate}
-            focusedBody={focusedBody}
-            onBodyFocus={setFocusedBody}
-            controlsRef={controlsRef}
-          />
-          
-          <OrbitControls
-            ref={controlsRef}
-            enableZoom={true}
-            autoRotate={!focusedBody} // Disable auto-rotate when focused
-            autoRotateSpeed={0.3}
-            minDistance={1.1} // Street view: Very close zoom (1.1× planet radius)
-            maxDistance={2000}
-            maxPolarAngle={Math.PI / 1.5}
-            minPolarAngle={Math.PI / 4}
-            target={[0, 0, 0]}
-            enableDamping={true}
-            dampingFactor={0.05}
-          />
-        </Canvas>
-      </div>
-
-      <div className="absolute inset-0 z-50 pointer-events-none">
-        <HUDOverlay
-          selectedLocation={selectedLocation}
-          onLocationChange={handleLocationChange}
-          kpData={data.kpIndex || undefined}
-          solarWind={data.solarWind || undefined}
-          forecast={data.forecast || undefined}
-          visibility={visibility || undefined}
-          loading={loading}
-          error={error}
-          onRefresh={handleRefresh}
-          isOnline={isOnline}
-          currentDate={currentDate}
-          onDateChange={setCurrentDate}
+    <HelmetHUD theme={hudTheme} onThemeChange={setHudTheme}>
+      {/* Fullscreen 3D Canvas */}
+      <Canvas
+        camera={{ position: [100, 40, 100], fov: 50, far: 5000 }}
+        gl={{ antialias: true }}
+        shadows
+      >
+        <Stars
+          radius={200}
+          depth={100}
+          count={8000}
+          factor={6}
+          saturation={0}
+          fade
+          speed={0.5}
         />
-      </div>
-      
-      <TelemetryDeck
+        
+        <SolarSystemScene
+          kpValue={data.kpIndex?.kpValue || 3}
+          solarWindSpeed={data.solarWind?.speed || 400}
+          currentDate={currentDate}
+          focusedBody={focusedBody}
+          onBodyFocus={setFocusedBody}
+          controlsRef={controlsRef}
+        />
+        
+        <OrbitControls
+          ref={controlsRef}
+          enableZoom={true}
+          autoRotate={!focusedBody}
+          autoRotateSpeed={0.3}
+          minDistance={1.1}
+          maxDistance={2000}
+          maxPolarAngle={Math.PI / 1.5}
+          minPolarAngle={Math.PI / 4}
+          target={[0, 0, 0]}
+          enableDamping={true}
+          dampingFactor={0.05}
+        />
+      </Canvas>
+
+      {/* Corner Metrics Overlay */}
+      <CornerMetrics
+        theme={hudTheme}
         currentDate={currentDate}
-        onDateChange={setCurrentDate}
-        solarWindSpeed={data.solarWind?.speed || 400}
         kpValue={data.kpIndex?.kpValue || 3}
+        solarWindSpeed={data.solarWind?.speed || 400}
         focusedBody={focusedBody}
-        onResetView={handleResetView}
-        isPlaying={isPlaying}
-        setIsPlaying={setIsPlaying}
-        playbackSpeed={playbackSpeed}
-        setPlaybackSpeed={setPlaybackSpeed}
+        isMobile={isMobile}
       />
-      
+
+      {/* Mobile Expandable Data Panel */}
+      <MobileDataPanel
+        theme={hudTheme}
+        kpData={data.kpIndex || undefined}
+        solarWind={data.solarWind || undefined}
+        selectedLocation={selectedLocation}
+        isMobile={isMobile}
+      />
+
+      {/* Keyboard Help (Bottom-Left Icon) */}
       <KeyboardHelp />
-    </div>
+    </HelmetHUD>
   );
 }
