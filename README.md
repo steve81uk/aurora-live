@@ -48,6 +48,10 @@
 - Grid-based analytical interface
 ### 🪐 Interactive Solar System
 - **Real Astronomy**: Powered by `astronomy-engine` for accurate planetary positions
+- **Free Flight Camera**: Click planets → 2s smooth animation → **Full 360° control unlocked!**
+  - Spin freely around any planet after animation completes
+  - Extreme zoom: Get as close as 1.2× planet radius ("street view")
+  - EXIT ORBIT button for easy return to solar system view
 - **Clickable Planets**: Focus camera on any celestial body with smooth Bezier easing
 - **8 Planets + Moon**: Mercury through Neptune with realistic orbits and axial tilts
 - **ISS & DSCOVR Satellites**: Live orbital mechanics

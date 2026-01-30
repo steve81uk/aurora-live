@@ -2,7 +2,48 @@
 
 All notable changes to Solar Admiral will be documented in this file.
 
-## [Unreleased] - 2026-01-30
+## [0.5.1] - 2026-01-30
+
+### 🚀 Free Flight Camera System
+
+#### Added
+- **Revolutionary Camera Control**: True planetary exploration freedom
+  - Camera animates to planet with 2-second Bezier easing
+  - After animation: **Full user control released** - spin 360° around planet!
+  - Extreme zoom: `minDistance: 1.2` enables "street view" mode
+  - Pan enabled for additional movement freedom
+- **EXIT ORBIT Button**: Large, prominent escape button
+  - Center screen with pulsing cyan animation
+  - One-click return to solar system overview
+  - Appears only when focused on celestial body
+  - Keyboard accessible with pointer-events-auto
+
+#### Changed
+- **Dynamic OrbitControls**: Distance limits adapt to focus state
+  - Focused: `minDistance: 1.2, maxDistance: 500` (close-up exploration)
+  - Unfocused: `minDistance: 15, maxDistance: 2000` (solar system view)
+- **Camera Logic**: Refactored for cleaner state management
+  - `transitioning` state tracks animation status
+  - Separate refs for start/target positions (camera + controls)
+  - Animation handoff: After 2s, user gains full control
+  - Camera shake disabled during transitions
+
+#### Fixed
+- **Camera Lock Bug**: Camera no longer continuously LERPs after reaching target
+- **User Control**: User can freely rotate/zoom after 2-second animation
+- **Reset Smooth**: Exit orbit uses same smooth animation system
+
+#### Technical
+- Bundle: **344.77 KB gzipped** (+0.32 KB, <0.1% increase)
+- Build Time: 23.34 seconds
+- CSS: Added `@keyframes pulse` animation
+- Code: ~150 lines refactored in SolarSystemScene.tsx
+
+---
+
+## [0.5.0] - 2026-01-30 (Professional Cleanup)
+
+### 📁 Project Organization
 
 ### 🚀 Major Features Added
 

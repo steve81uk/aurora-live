@@ -853,9 +853,12 @@ export default function SolarSystemScene({
   const showTrails = true; // TODO: Add toggle in UI
   const [earthPosition, setEarthPosition] = useState(new THREE.Vector3(0, 0, 0));
   const [planetPositions, setPlanetPositions] = useState<Map<string, THREE.Vector3>>(new Map());
-  const [cameraAnimating, setCameraAnimating] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
   const cameraStartPos = useRef(new THREE.Vector3());
+  const cameraTargetPos = useRef(new THREE.Vector3());
   const cameraStartTime = useRef(0);
+  const controlsStartTarget = useRef(new THREE.Vector3());
+  const controlsTargetPos = useRef(new THREE.Vector3());
   
   const easeInOutCubic = bezierEasing(0.65, 0, 0.35, 1); // Smooth easing curve
 
@@ -901,9 +904,10 @@ export default function SolarSystemScene({
   }, [currentDate]);
   
   // Enhanced camera chase view animation with OrbitControls target
+  // CRITICAL: Only animate when transitioning, then release control to user
   useFrame((state) => {
     // Camera shake during severe storms (Kp > 7)
-    if (kpValue > 7) {
+    if (kpValue > 7 && !transitioning) {
       const shakeIntensity = ((kpValue - 7) / 2) * 0.01; // Scale 0-0.01 for Kp 7-9
       const shakeX = (Math.random() - 0.5) * shakeIntensity;
       const shakeY = (Math.random() - 0.5) * shakeIntensity;
@@ -914,48 +918,55 @@ export default function SolarSystemScene({
       camera.position.z += shakeZ;
     }
     
+    // Handle focus transitions
     if (focusedBody && focusedBody !== 'reset' && controlsRef?.current) {
       const targetPos = focusedBody === 'Sun' 
         ? new THREE.Vector3(0, 0, 0)
         : planetPositions.get(focusedBody);
       
       if (targetPos) {
-        // Smoothly animate OrbitControls target to planet position
-        const currentTarget = new THREE.Vector3(
-          controlsRef.current.target.x,
-          controlsRef.current.target.y,
-          controlsRef.current.target.z
-        );
-        currentTarget.lerp(targetPos, 0.05);
-        controlsRef.current.target.set(currentTarget.x, currentTarget.y, currentTarget.z);
-        
-        // Calculate initial camera position (behind planet, looking at it)
-        const planet = PLANETS.find(p => p.name === focusedBody);
-        const distance = planet ? planet.radius * 3 : 30; // Closer view (3x instead of 8x)
-        
-        const sunDir = new THREE.Vector3(0, 0, 0).sub(targetPos).normalize();
-        const targetCameraPos = targetPos.clone().add(sunDir.multiplyScalar(-distance));
-        targetCameraPos.y += distance * 0.2; // Slight elevation
-        
-        // Only animate camera if starting a new focus
-        if (!cameraAnimating && camera.position.distanceTo(targetCameraPos) > 1) {
+        // Start transition if not already transitioning
+        if (!transitioning && camera.position.distanceTo(cameraTargetPos.current) > 1) {
+          // Calculate target positions
+          const planet = PLANETS.find(p => p.name === focusedBody);
+          const distance = planet ? planet.radius * 3 : 30;
+          
+          const sunDir = new THREE.Vector3(0, 0, 0).sub(targetPos).normalize();
+          const newCameraPos = targetPos.clone().add(sunDir.multiplyScalar(-distance));
+          newCameraPos.y += distance * 0.2; // Slight elevation
+          
+          // Store start and target positions
           cameraStartPos.current.copy(camera.position);
+          cameraTargetPos.current.copy(newCameraPos);
+          controlsStartTarget.current.copy(controlsRef.current.target);
+          controlsTargetPos.current.copy(targetPos);
           cameraStartTime.current = state.clock.elapsedTime;
-          setCameraAnimating(true);
+          setTransitioning(true);
         }
         
-        // Animate with Bezier easing for 2 seconds, then release
-        if (cameraAnimating) {
+        // Animate during transition
+        if (transitioning) {
           const elapsed = state.clock.elapsedTime - cameraStartTime.current;
           const duration = 2.0; // 2 second animation
           
           if (elapsed < duration) {
             const t = easeInOutCubic(Math.min(elapsed / duration, 1));
-            camera.position.lerpVectors(cameraStartPos.current, targetCameraPos, t);
-            camera.lookAt(targetPos);
+            
+            // Animate camera position
+            camera.position.lerpVectors(cameraStartPos.current, cameraTargetPos.current, t);
+            
+            // Animate OrbitControls target
+            const currentTarget = new THREE.Vector3();
+            currentTarget.lerpVectors(controlsStartTarget.current, controlsTargetPos.current, t);
+            controlsRef.current.target.copy(currentTarget);
+            
+            camera.lookAt(currentTarget);
           } else {
-            // Animation complete - user can now freely rotate/zoom
-            setCameraAnimating(false);
+            // Animation complete - release control to user!
+            setTransitioning(false);
+            // Final position
+            camera.position.copy(cameraTargetPos.current);
+            controlsRef.current.target.copy(controlsTargetPos.current);
           }
         }
         
@@ -963,14 +974,34 @@ export default function SolarSystemScene({
       }
     } else if (focusedBody === 'reset' && controlsRef?.current) {
       // Reset to heliocentric view
-      const homeTarget = new THREE.Vector3(0, 0, 0);
-      const currentTarget = new THREE.Vector3(
-        controlsRef.current.target.x,
-        controlsRef.current.target.y,
-        controlsRef.current.target.z
-      );
-      currentTarget.lerp(homeTarget, 0.05);
-      controlsRef.current.target.set(currentTarget.x, currentTarget.y, currentTarget.z);
+      if (!transitioning) {
+        cameraStartPos.current.copy(camera.position);
+        cameraTargetPos.current.set(100, 40, 100);
+        controlsStartTarget.current.copy(controlsRef.current.target);
+        controlsTargetPos.current.set(0, 0, 0);
+        cameraStartTime.current = state.clock.elapsedTime;
+        setTransitioning(true);
+      }
+      
+      if (transitioning) {
+        const elapsed = state.clock.elapsedTime - cameraStartTime.current;
+        const duration = 2.0;
+        
+        if (elapsed < duration) {
+          const t = easeInOutCubic(Math.min(elapsed / duration, 1));
+          
+          camera.position.lerpVectors(cameraStartPos.current, cameraTargetPos.current, t);
+          
+          const currentTarget = new THREE.Vector3();
+          currentTarget.lerpVectors(controlsStartTarget.current, controlsTargetPos.current, t);
+          controlsRef.current.target.copy(currentTarget);
+        } else {
+          setTransitioning(false);
+          camera.position.copy(cameraTargetPos.current);
+          controlsRef.current.target.copy(controlsTargetPos.current);
+        }
+      }
+      
       controlsRef.current.update();
     }
   });
@@ -1027,6 +1058,32 @@ export default function SolarSystemScene({
       <L1TrajectoryLine earthPosition={earthPosition} />
 
       <SolarWindParticles speed={solarWindSpeed} />
+      
+      {/* EXIT ORBIT Button - appears when focused on a celestial body */}
+      {focusedBody && focusedBody !== 'reset' && !transitioning && (
+        <Html center>
+          <button
+            onClick={() => {
+              console.log('🚀 EXIT ORBIT clicked');
+              onBodyFocus?.('reset');
+            }}
+            className="px-6 py-3 bg-cyan-600/90 hover:bg-cyan-500 text-white font-bold 
+                       rounded-lg shadow-2xl border-2 border-cyan-400 
+                       transition-all duration-200 hover:scale-105 active:scale-95
+                       backdrop-blur-md text-lg pointer-events-auto cursor-pointer"
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 100,
+              animation: 'pulse 2s ease-in-out infinite'
+            }}
+          >
+            ⬅️ EXIT ORBIT
+          </button>
+        </Html>
+      )}
     </>
   );
 }

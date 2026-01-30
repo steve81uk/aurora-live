@@ -151,13 +151,14 @@ export default function App() {
             enableZoom={true}
             autoRotate={!focusedBody}
             autoRotateSpeed={0.3}
-            minDistance={1.1}
-            maxDistance={2000}
+            minDistance={focusedBody && focusedBody !== 'reset' ? 1.2 : 15}
+            maxDistance={focusedBody && focusedBody !== 'reset' ? 500 : 2000}
             maxPolarAngle={Math.PI / 1.5}
             minPolarAngle={Math.PI / 4}
             target={[0, 0, 0]}
             enableDamping={true}
             dampingFactor={0.05}
+            enablePan={true}
           />
         </Canvas>
       </div>
