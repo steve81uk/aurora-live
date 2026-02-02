@@ -120,9 +120,7 @@ npm run build
 
 # Preview production build
 npm run preview
-```
 
-Visit `http://localhost:5173` to explore!
 ---
 
 ## 📂 Project Structure
