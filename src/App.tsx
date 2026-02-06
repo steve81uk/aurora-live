@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
-import { Monitor, Satellite, Maximize } from 'lucide-react';
+import { Monitor, Satellite, Maximize, Radio } from 'lucide-react';
 import { LOCATIONS } from './data/locations';
 import { SURFACE_LOCATIONS, type SurfaceLocation } from './data/surfaceLocations';
 import { useAuroraData } from './hooks/useAuroraData';
@@ -37,6 +37,7 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('explorer');
   const [uiVisible, setUiVisible] = useState(true);
+  const [showSatellites, setShowSatellites] = useState(true);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { data } = useAuroraData(selectedLocation);
   const { checkKpIncrease } = useSoundFX();
@@ -215,6 +216,7 @@ export default function App() {
             surfaceMode={surfaceMode}
             surfaceLocation={surfaceLocation}
             mythicTheme={mythicTheme}
+            showSatellites={showSatellites}
           />
           
           <OrbitControls
@@ -324,6 +326,16 @@ export default function App() {
               >
                 <Monitor className="w-3 h-3 text-purple-300" />
                 <span className="font-semibold text-purple-300 hidden md:inline">MISSION CONTROL</span>
+              </button>
+
+              <button
+                onClick={() => setShowSatellites(!showSatellites)}
+                className={`p-1.5 backdrop-blur-md border rounded-md hover:bg-white/10 transition-all duration-200 ${
+                  showSatellites ? 'bg-cyan-600/20 border-cyan-400/30' : 'bg-black/20 border-white/10'
+                }`}
+                title="Toggle Satellites"
+              >
+                <Radio className={`w-3 h-3 ${showSatellites ? 'text-cyan-300' : 'text-white/50'}`} />
               </button>
 
               <button
