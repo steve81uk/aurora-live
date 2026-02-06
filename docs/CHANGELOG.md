@@ -2,6 +2,64 @@
 
 All notable changes to Solar Admiral will be documented in this file.
 
+## [0.11.0] - 2026-01-30
+
+### Added
+- **Pluto**: Added as the 9th celestial body in the solar system
+  - Real ephemeris using Astronomy.Body.Pluto
+  - Realistic size (radius: 0.2) and color (#8B7355)
+  - Extreme axial tilt: 122.5°
+  - Clickable with planet info card
+- **Enhanced Earth Textures**: Multi-layer realistic planet rendering
+  - Day Texture: NASA Blue Marble (2048px resolution)
+  - Night Texture: City lights emissive map (2048px) with 0.5 intensity
+  - Cloud Layer: Transparent sphere at 1.01× radius, 40% opacity
+  - Atmosphere Glow: Cyan halo at 1.02× radius, BackSide rendering
+  - Material: MeshStandardMaterial with PBR (roughness 0.5, metalness 0.1)
+- **Satellite Toggle System**: Control visibility of space assets
+  - Toggle button in top-left controls (Radio icon from lucide-react)
+  - Shows/hides: ISS, DSCOVR, L1 trajectory line
+  - Visual states: Cyan glow (active) / Gray (inactive)
+  - Default: Satellites visible
+  - Keyboard shortcut ready for future implementation
+
+### Changed
+- Earth now has realistic day/night cycle with city lights
+- Cloud cover adds dynamic weather simulation feel
+- Atmospheric glow creates 3D depth perception
+- Satellite visibility can be toggled for cleaner viewing experience
+
+### Technical
+- Bundle: **353.73 KB gzipped** (+0.34 KB from v0.10.1, +0.096%)
+- Build Time: 29.89 seconds
+- Modified Files: 
+  - SolarSystemScene.tsx: Enhanced texture loading, atmosphere/cloud layers
+  - App.tsx: Satellite toggle state and button
+- New Props: `showSatellites?: boolean` in SolarSystemSceneProps
+- Texture Loading: Three separate CDN textures (day/night/clouds)
+- Performance: Minimal impact, efficient layer rendering
+
+### User Experience
+1. **Realistic Earth** → Day/night textures with emissive city lights visible at night
+2. **Cloud Layer** → Semi-transparent clouds floating above surface
+3. **Atmosphere** → Subtle blue glow creates depth
+4. **Pluto** → Complete 9-planet solar system (+ dwarf planet)
+5. **Declutter** → Toggle satellites off for aurora-focused viewing
+
+### Known Limitations
+- Static cloud layer (no independent rotation yet)
+- Textures require internet (CDN-hosted)
+- Other planets still use solid colors (future enhancement)
+- Surface camera positioning not yet implemented
+
+### Next Phase
+- Clickable location markers on Earth surface
+- Aurora probability tooltips per location
+- Camera positioning at specific lat/lon coordinates
+- Layer control panel for labels
+
+---
+
 ## [0.7.0] - 2026-01-30
 
 ### Added
