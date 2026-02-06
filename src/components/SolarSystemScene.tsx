@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import * as Astronomy from 'astronomy-engine';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -69,23 +69,66 @@ const PLANETS: PlanetConfig[] = [
 
 // --- COMPONENTS ---
 
-// 1. The New "Solid" Earth Component
+// 1. Earth with Textures, Cities & Aurora
 function EarthGroup({ config, kpValue, onLocationClick }: { config: PlanetConfig, kpValue: number, onLocationClick: any }) {
   const [hoveredLoc, setHoveredLoc] = useState<string | null>(null);
+  const cloudsRef = useRef<THREE.Mesh>(null);
+
+  // Load textures with error handling
+  let textures: [THREE.Texture, THREE.Texture, THREE.Texture] | null = null;
+  try {
+    textures = useTexture([
+      '/textures/8k_earth_daymap.jpg',
+      '/textures/8k_earth_nightmap.jpg',
+      '/textures/8k_earth_clouds.jpg'
+    ]) as [THREE.Texture, THREE.Texture, THREE.Texture];
+  } catch (error) {
+    console.warn('Earth textures not found, using fallback colors');
+  }
+
+  const [dayMap, nightMap, cloudsMap] = textures || [null, null, null];
+
+  useFrame(() => {
+    if (cloudsRef.current) cloudsRef.current.rotation.y += 0.0003;
+  });
 
   return (
     <group>
-      {/* SOLID EARTH - Simple Color */}
+      {/* SOLID EARTH */}
       <mesh castShadow receiveShadow>
-        <sphereGeometry args={[config.radius, 64, 64]} />
-        <meshStandardMaterial 
-          color="#0d47a1"
-          emissive="#1e88e5"
-          emissiveIntensity={0.2}
-          roughness={0.7}
-          metalness={0.1}
-        />
+        <sphereGeometry args={[config.radius, 128, 128]} />
+        {dayMap && nightMap ? (
+          <meshStandardMaterial 
+            map={dayMap}
+            emissiveMap={nightMap}
+            emissive="#ffffff"
+            emissiveIntensity={0.5}
+            roughness={0.7}
+            metalness={0.1}
+          />
+        ) : (
+          <meshStandardMaterial 
+            color="#0d47a1"
+            emissive="#1e88e5"
+            emissiveIntensity={0.2}
+            roughness={0.7}
+            metalness={0.1}
+          />
+        )}
       </mesh>
+
+      {/* CLOUDS LAYER */}
+      {cloudsMap && (
+        <mesh ref={cloudsRef} scale={[1.01, 1.01, 1.01]}>
+          <sphereGeometry args={[config.radius, 64, 64]} />
+          <meshStandardMaterial 
+            map={cloudsMap}
+            transparent
+            opacity={0.4}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
 
       {/* AURORA SHELL */}
       <mesh scale={[1.15, 1.15, 1.15]}>
@@ -138,6 +181,37 @@ function EarthGroup({ config, kpValue, onLocationClick }: { config: PlanetConfig
   );
 }
 
+// 1b. The Moon
+function Moon({ earthGroupRef }: { earthGroupRef: React.RefObject<THREE.Group | null> }) {
+  const moonRef = useRef<THREE.Mesh>(null);
+  
+  useFrame(({ clock }) => {
+    if (moonRef.current && earthGroupRef.current) {
+      // Simple circular orbit around Earth
+      const time = clock.getElapsedTime() * 0.2; // Slow orbit
+      const radius = 2.5; // Distance from Earth
+      
+      const x = Math.cos(time) * radius;
+      const z = Math.sin(time) * radius;
+      
+      // Position relative to Earth's group
+      moonRef.current.position.set(x, 0, z);
+      moonRef.current.rotation.y += 0.01; // Slow rotation
+    }
+  });
+
+  return (
+    <mesh ref={moonRef} castShadow receiveShadow>
+      <sphereGeometry args={[0.27, 32, 32]} />
+      <meshStandardMaterial 
+        color="#cccccc"
+        roughness={0.9}
+        metalness={0.0}
+      />
+    </mesh>
+  );
+}
+
 // 2. Generic Planet Wrapper
 function Planet({ config, currentDate, focusedBody, onBodyFocus, onLocationClick, kpValue }: any) {
   const groupRef = useRef<THREE.Group>(null);
@@ -162,7 +236,10 @@ function Planet({ config, currentDate, focusedBody, onBodyFocus, onLocationClick
         
         {/* Render Earth differently than other planets */}
         {config.name === 'Earth' ? (
-          <EarthGroup config={config} kpValue={kpValue} onLocationClick={onLocationClick} />
+          <>
+            <EarthGroup config={config} kpValue={kpValue} onLocationClick={onLocationClick} />
+            <Moon earthGroupRef={groupRef} />
+          </>
         ) : (
           <mesh 
             onClick={(e) => { e.stopPropagation(); onBodyFocus(config.name); }}
