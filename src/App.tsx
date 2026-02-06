@@ -1,19 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
-import { Monitor, Satellite, Maximize, Radio } from 'lucide-react';
+import { Monitor, Satellite, Maximize } from 'lucide-react';
 import { LOCATIONS } from './data/locations';
 import { SURFACE_LOCATIONS, type SurfaceLocation } from './data/surfaceLocations';
 import { useAuroraData } from './hooks/useAuroraData';
 import { useSoundFX } from './hooks/useSoundFX';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { SolarSystemScene } from './components';
+import { SolarSystemScene } from './components'; // Ensure this exports your updated scene
+import { SkyViewer } from './components/SkyViewer'; // <--- NEW IMPORT
 import { ShootingStars } from './components/ShootingStars';
 import { HeimdallProtocol } from './components/HeimdallProtocol';
 import { MythicThemeSelector } from './components/MythicThemeSelector';
 import { SurfaceViewControls } from './components/SurfaceViewControls';
 import { DataStream } from './components/DataStream';
-import { CanvasResizeHandler } from './components/CanvasResizeHandler';
 import ThemeSelector from './components/ThemeSelector';
 import { type HUDTheme } from './components/HelmetHUD';
 import CornerMetrics from './components/CornerMetrics';
@@ -29,15 +29,20 @@ export default function App() {
   const [selectedLocation] = useState(LOCATIONS[0]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
+  
+  // State for Surface Mode (Planet Surface)
   const [surfaceMode, setSurfaceMode] = useState(false);
   const [surfaceLocation, setSurfaceLocation] = useState<SurfaceLocation | null>(null);
+  
+  // State for Sky View (Teleport to Earth City)
+  const [viewingLocation, setViewingLocation] = useState<{lat: number, lon: number, name: string} | null>(null); // <--- NEW STATE
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [hudTheme, setHudTheme] = useState<HUDTheme>('fighter');
   const [mythicTheme, setMythicTheme] = useState<AppTheme>('SCI_FI');
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('explorer');
   const [uiVisible, setUiVisible] = useState(true);
-  const [showSatellites, setShowSatellites] = useState(true);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { data } = useAuroraData(selectedLocation);
   const { checkKpIncrease } = useSoundFX();
@@ -120,6 +125,7 @@ export default function App() {
     onResetView: () => {
       handleExitSurface();
       setFocusedBody(null);
+      setViewingLocation(null); // Close sky view on reset
     },
     onJumpToNow: () => setCurrentDate(new Date()),
   });
@@ -188,11 +194,8 @@ export default function App() {
           camera={{ position: [0, 20, 45], fov: 45, far: 5000 }}
           gl={{ antialias: true }}
           shadows
-          style={{ width: '100%', height: '100%', display: 'block' }}
+          style={{ width: '100%', height: '100%' }}
         >
-          {/* Resize Handler */}
-          <CanvasResizeHandler />
-          
           <Stars
             radius={200}
             depth={100}
@@ -216,7 +219,8 @@ export default function App() {
             surfaceMode={surfaceMode}
             surfaceLocation={surfaceLocation}
             mythicTheme={mythicTheme}
-            showSatellites={showSatellites}
+            // WIRE UP THE CLICK HANDLER
+            onLocationClick={setViewingLocation} 
           />
           
           <OrbitControls
@@ -227,7 +231,7 @@ export default function App() {
             autoRotateSpeed={0.3}
             minDistance={focusedBody && focusedBody !== 'reset' ? 0.1 : 15}
             maxDistance={focusedBody && focusedBody !== 'reset' ? 500 : 2000}
-            maxPolarAngle={Math.PI} // Allow full 360° up/down (removed restriction)
+            maxPolarAngle={Math.PI} // Allow full 360° up/down
             minPolarAngle={0} // Allow looking straight up
             target={[0, 0, 0]}
             enableDamping={true}
@@ -249,7 +253,6 @@ export default function App() {
         />
         
         {/* Helmet Visor Effects (Ultra Minimal) */}
-        {/* Vignette Effect (Helmet Edge Darkness) - BARELY VISIBLE */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -258,7 +261,7 @@ export default function App() {
           }}
         />
 
-        {/* Scanlines (Fighter & Commander Themes) - BARELY VISIBLE */}
+        {/* Scanlines (Fighter & Commander Themes) */}
         {(hudTheme === 'fighter' || hudTheme === 'commander') && (
           <div 
             className="absolute inset-0 opacity-3 pointer-events-none animate-pulse"
@@ -269,7 +272,7 @@ export default function App() {
           />
         )}
 
-        {/* Center Crosshair (Fighter & Commander Themes) - BARELY VISIBLE */}
+        {/* Center Crosshair */}
         {(hudTheme === 'fighter' || hudTheme === 'commander') && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             <svg width="40" height="40" viewBox="0 0 60 60" className="opacity-10">
@@ -283,7 +286,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Arc Reactor Center (Iron Man Theme) - BARELY VISIBLE */}
+        {/* Arc Reactor Center */}
         {hudTheme === 'ironman' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             <div className="relative w-16 h-16 animate-pulse">
@@ -304,7 +307,7 @@ export default function App() {
           </div>
         )}
 
-        {/* NASA-style Circular Frame (Astronaut Theme) - BARELY VISIBLE */}
+        {/* NASA-style Circular Frame */}
         {hudTheme === 'astronaut' && (
           <div className="absolute inset-0 pointer-events-none">
             <svg className="w-full h-full opacity-5" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -326,16 +329,6 @@ export default function App() {
               >
                 <Monitor className="w-3 h-3 text-purple-300" />
                 <span className="font-semibold text-purple-300 hidden md:inline">MISSION CONTROL</span>
-              </button>
-
-              <button
-                onClick={() => setShowSatellites(!showSatellites)}
-                className={`p-1.5 backdrop-blur-md border rounded-md hover:bg-white/10 transition-all duration-200 ${
-                  showSatellites ? 'bg-cyan-600/20 border-cyan-400/30' : 'bg-black/20 border-white/10'
-                }`}
-                title="Toggle Satellites"
-              >
-                <Radio className={`w-3 h-3 ${showSatellites ? 'text-cyan-300' : 'text-white/50'}`} />
               </button>
 
               <button
@@ -382,7 +375,7 @@ export default function App() {
           </>
         )}
         
-        {/* Surface View Controls */}
+        {/* Surface View Controls (Only when zoomed in on a planet with surface support) */}
         {surfaceMode && focusedBody && (
           <SurfaceViewControls
             planetName={focusedBody}
@@ -414,6 +407,17 @@ export default function App() {
 
         {/* Keyboard Help */}
         <KeyboardHelp />
+
+        {/* ========== LAYER 2: THE SKY PORTAL (TELEPORT) ========== */}
+        {/* This sits on top of everything when active */}
+        {viewingLocation && (
+          <SkyViewer 
+            lat={viewingLocation.lat} 
+            lon={viewingLocation.lon} 
+            locationName={viewingLocation.name} 
+            onClose={() => setViewingLocation(null)} 
+          />
+        )}
       </div>
     </div>
   );
