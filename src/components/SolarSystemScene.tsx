@@ -212,11 +212,11 @@ function Moon({ earthGroupRef }: { earthGroupRef: React.RefObject<THREE.Group | 
   );
 }
 
-// 2. Generic Planet Wrapper
+// 2. Generic Planet Wrapper with Hover Info
 function Planet({ config, currentDate, focusedBody, onBodyFocus, onLocationClick, kpValue }: any) {
   const groupRef = useRef<THREE.Group>(null);
-  
-  // Simplified - no textures, use colors from config
+  const [hovered, setHovered] = useState(false);
+  const [distance, setDistance] = useState(0);
   
   useFrame(() => {
     if (groupRef.current) {
@@ -227,6 +227,10 @@ function Planet({ config, currentDate, focusedBody, onBodyFocus, onLocationClick
         helio.y * AU_TO_SCREEN_UNITS,
         helio.z * AU_TO_SCREEN_UNITS
       );
+      
+      // Calculate distance from Sun in AU
+      const dist = Math.sqrt(helio.x * helio.x + helio.y * helio.y + helio.z * helio.z);
+      setDistance(dist);
     }
   });
 
@@ -242,25 +246,63 @@ function Planet({ config, currentDate, focusedBody, onBodyFocus, onLocationClick
           </>
         ) : (
           <mesh 
-            onClick={(e) => { e.stopPropagation(); onBodyFocus(config.name); }}
-            onPointerOver={() => document.body.style.cursor = 'pointer'}
-            onPointerOut={() => document.body.style.cursor = 'auto'}
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onBodyFocus(config.name); 
+            }}
+            onPointerOver={(e) => { 
+              e.stopPropagation();
+              document.body.style.cursor = 'pointer';
+              setHovered(true);
+            }}
+            onPointerOut={() => { 
+              document.body.style.cursor = 'auto';
+              setHovered(false);
+            }}
           >
             <sphereGeometry args={[config.radius, 32, 32]} />
             <meshStandardMaterial 
               color={config.color}
               emissive={config.emissive || config.color}
-              emissiveIntensity={0.2}
+              emissiveIntensity={hovered ? 0.6 : 0.2}
               roughness={0.7}
               metalness={0.2}
             />
           </mesh>
         )}
 
-        {/* Planet Label (When not Earth) */}
-        {focusedBody !== config.name && config.name !== 'Earth' && (
+        {/* HOLO HUD Hover Info */}
+        {hovered && config.name !== 'Earth' && (
+          <Html distanceFactor={5} position={[0, config.radius + 1, 0]} center>
+            <div className="bg-gradient-to-br from-black/90 to-cyan-900/90 backdrop-blur-xl border-2 border-cyan-400 rounded-lg p-3 shadow-2xl shadow-cyan-500/50 min-w-[200px] pointer-events-none">
+              <div className="border-b border-cyan-500/50 pb-2 mb-2">
+                <h3 className="text-xl font-bold text-cyan-300 tracking-wider">{config.name.toUpperCase()}</h3>
+              </div>
+              <div className="space-y-1 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-cyan-400">DISTANCE:</span>
+                  <span className="text-white font-bold">{distance.toFixed(3)} AU</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-cyan-400">RADIUS:</span>
+                  <span className="text-white font-bold">{config.radius.toFixed(1)}× Earth</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-cyan-400">AXIAL TILT:</span>
+                  <span className="text-white font-bold">{(config.axialTilt || 0).toFixed(1)}°</span>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t border-cyan-500/30">
+                <p className="text-[10px] text-cyan-300/70 text-center">CLICK TO FOCUS</p>
+              </div>
+            </div>
+          </Html>
+        )}
+
+        {/* Simple Label (When not hovered) */}
+        {!hovered && focusedBody !== config.name && config.name !== 'Earth' && (
           <Html distanceFactor={10} position={[0, config.radius + 0.5, 0]}>
-            <div className="text-white/50 text-[10px] font-mono">{config.name}</div>
+            <div className="text-white/50 text-[10px] font-mono pointer-events-none">{config.name}</div>
           </Html>
         )}
       </group>
@@ -282,6 +324,60 @@ function Sun({ onBodyFocus }: any) {
         <meshBasicMaterial color="#FF8800" transparent opacity={0.2} side={THREE.BackSide} />
       </mesh>
       <pointLight intensity={1000} distance={5000} decay={2} color="#FDB813" />
+    </group>
+  );
+}
+
+// 3b. Voyager 1 Easter Egg (Leaving the Solar System)
+function Voyager1() {
+  const voyagerRef = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
+  
+  useFrame(({ clock }) => {
+    if (voyagerRef.current) {
+      // Voyager is moving away from the Sun at ~17 km/s
+      // Starting ~160 AU away, moving outward
+      const time = clock.getElapsedTime();
+      const baseDistance = 160 * AU_TO_SCREEN_UNITS / 40; // Convert to screen units
+      const speed = 0.01; // Slow outward movement
+      const distance = baseDistance + time * speed;
+      
+      // Position in the direction it's actually traveling (roughly toward constellation Ophiuchus)
+      const angle = 0.6; // radians
+      voyagerRef.current.position.set(
+        Math.cos(angle) * distance,
+        0.1 * distance, // Slight inclination
+        Math.sin(angle) * distance
+      );
+    }
+  });
+  
+  return (
+    <group ref={voyagerRef}>
+      <mesh
+        onPointerOver={() => { setHovered(true); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto'; }}
+      >
+        <boxGeometry args={[0.02, 0.02, 0.04]} />
+        <meshBasicMaterial color="#888888" />
+      </mesh>
+      
+      {hovered && (
+        <Html distanceFactor={20} position={[0, 0.2, 0]} center>
+          <div className="bg-black/95 backdrop-blur-xl border border-cyan-500 rounded-lg p-2 shadow-xl min-w-[180px] pointer-events-none">
+            <h4 className="text-sm font-bold text-cyan-300 mb-1">🛰️ VOYAGER 1</h4>
+            <p className="text-[10px] text-cyan-100 font-mono">
+              Launched: Sep 5, 1977<br/>
+              Distance: ~160 AU<br/>
+              Speed: 17 km/s<br/>
+              Status: INTERSTELLAR
+            </p>
+            <p className="text-[8px] text-cyan-400/70 mt-1 italic">
+              "The Golden Record is still playing..."
+            </p>
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
@@ -350,6 +446,9 @@ export default function SolarSystemScene({
     <>
       <ambientLight intensity={0.1} />
       <Sun onBodyFocus={onBodyFocus} />
+      
+      {/* Easter Egg: Voyager 1 */}
+      <Voyager1 />
       
       {PLANETS.map(planet => (
         <group key={planet.name}>

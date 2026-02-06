@@ -2,6 +2,144 @@
 
 All notable changes to Solar Admiral will be documented in this file.
 
+## [0.14.0] - 2026-01-31 🎯 MEGA UPDATE
+
+### Added
+- **HOLO HUD Planet Overlays**: Hover any planet to see detailed info cards
+  - Real-time distance calculation in AU (updates every frame)
+  - Planet radius relative to Earth
+  - Axial tilt in degrees
+  - Glassmorphism design with cyan accents
+  - Emissive glow increases on hover (0.2 → 0.6)
+  - "CLICK TO FOCUS" instruction
+- **Voyager 1 Easter Egg** 🛰️: Hidden interstellar spacecraft
+  - Positioned at ~160 AU (accurate 2026 distance)
+  - Moving at 0.01 units/sec toward Ophiuchus constellation
+  - Small grey box geometry (0.02×0.02×0.04)
+  - Hover reveals: Launch date, distance, speed, status
+  - Quote: "The Golden Record is still playing..."
+- **Comprehensive Attribution**: Expanded README with full credits
+  - All data sources (NOAA, NASA, Astronomy Engine)
+  - All texture sources (Solar System Scope, NASA GIBS)
+  - All libraries (Three.js, React, TailwindCSS)
+  - Design inspiration (JARVIS, NASA, Elite Dangerous)
+  - Scientific references (JPL Horizons, Space Weather Live)
+- **Easter Egg Documentation**: How to find hidden features
+- **Performance Metrics**: Detailed bundle size and optimization notes
+
+### Changed
+- **README.md**: Complete rewrite with v0.13.0 features
+  - Updated to reflect Sky Viewer, Moon, HOLO HUD
+  - Added Easter egg section
+  - Expanded attribution to 5 major sections
+  - Added performance notes and browser support
+  - Updated screenshot references
+- **Bundle Size**: Now 349.05 KB gzipped (1.22 MB uncompressed)
+- Planet hover states now show cursor pointer
+- Enhanced planet interaction feedback
+
+### Technical
+- Build Time: ~21 seconds
+- Modified Files:
+  - SolarSystemScene.tsx: Added Voyager1 component, enhanced Planet hover
+  - README.md: Complete overhaul
+  - CHANGELOG.md: This entry
+- New Components:
+  - Voyager1 (embedded in SolarSystemScene)
+  - Enhanced Planet with hover state and distance calculation
+- Performance: All features maintain 60 FPS target
+
+### User Experience
+1. **Explore Mode** → Hover planets for instant data
+2. **Hidden Secrets** → Find Voyager 1 in deep space
+3. **Full Attribution** → Know exactly where data comes from
+4. **Easter Egg Hunt** → More secrets may be waiting...
+
+## [0.13.0] - 2026-01-30
+
+### Added
+- **The Moon**: Realistic lunar orbit around Earth
+  - Grey sphere (0.27 Earth radius)
+  - Circular orbit at 2.5 screen units
+  - Slow rotation (0.01 per frame)
+  - Casts shadows
+  - Positioned relative to Earth group
+- **Sky Viewer Modal**: Stellarium Web integration
+  - Opens when clicking city dots on Earth
+  - Full-screen glassmorphism overlay
+  - Embedded Stellarium iframe with location coordinates
+  - Header with city name and coordinates
+  - Close button to return to solar system
+- **Credits Modal**: Data attribution panel
+  - Lists all data sources (NOAA, NASA, Astronomy Engine)
+  - Technology stack section
+  - Creator information
+  - Accessible via Info button in top-right
+- **Clickable Earth Cities**: 6 aurora hotspots
+  - Reykjavik, Tromsø, Anchorage, Yellowknife, Abisko, Tasmania
+  - Small cyan spheres on Earth surface
+  - Click to open Sky Viewer
+  - Hover cursor changes to pointer
+- **Earth Textures Restored**: High-quality planet rendering
+  - 8K day texture (NASA Blue Marble)
+  - 8K night texture (city lights, emissive 0.5)
+  - 8K cloud layer (transparent, 0.4 opacity)
+  - Error handling with fallback to solid blue
+  - Independent cloud rotation (0.0003 per frame)
+  - 128×128 polygon sphere for smoothness
+
+### Changed
+- Earth increased from 64×64 to 128×128 polygons
+- Texture loading now uses `useTexture` hook with try/catch
+- City markers now trigger Sky Viewer instead of console logs
+- Credits button added to top-right control group
+
+### Technical
+- Bundle: **348.43 KB gzipped** (+1.35 KB from v0.12.1)
+- Build Time: 14.81 seconds
+- Modified Files:
+  - SolarSystemScene.tsx: Moon component, texture restoration, city interaction
+  - App.tsx: Credits modal, Sky Viewer modal, location click handler
+  - index.css: Modal styling updates
+- New Files:
+  - components/SkyViewer.tsx (2,046 chars)
+  - components/CreditsModal.tsx (4,668 chars)
+- Dependencies: Existing (no new packages)
+
+### User Experience
+1. **Earth Exploration** → Click cities to see real sky maps
+2. **Moon Orbit** → Watch the Moon circle Earth realistically
+3. **High-Res Earth** → 8K textures with day/night/clouds
+4. **Attribution** → Full transparency on data sources
+
+## [0.12.1] - 2026-01-30 (Intermediate)
+
+### Changed
+- **Simplified Rendering**: Removed all texture loading temporarily
+- Earth rendered as simple blue MeshStandardMaterial
+- All planets using solid colors from config
+- Removed unused imports and variables
+
+### Technical
+- Bundle: **347.08 KB gzipped** (-8.78 KB, instant rendering)
+- Cleaned up unused constants (ISS_ORBIT_RADIUS, etc.)
+- Fixed TypeScript errors
+
+### Reason
+- Intermediate step to ensure scene renders immediately
+- Prepare for proper texture error handling
+
+## [0.12.0] - 2026-01-30
+
+### Added
+- Initial Sky Viewer implementation
+- Initial Credits modal
+- Earth texture path updates (CDN → local)
+- Increased Earth detail (64×64 → 128×128)
+
+### Technical
+- Bundle: 355.86 KB gzipped (+2.13 KB from v0.11.0)
+
 ## [0.11.0] - 2026-01-30
 
 ### Added
