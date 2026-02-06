@@ -13,6 +13,7 @@ import { HeimdallProtocol } from './components/HeimdallProtocol';
 import { MythicThemeSelector } from './components/MythicThemeSelector';
 import { SurfaceViewControls } from './components/SurfaceViewControls';
 import { DataStream } from './components/DataStream';
+import { CanvasResizeHandler } from './components/CanvasResizeHandler';
 import ThemeSelector from './components/ThemeSelector';
 import { type HUDTheme } from './components/HelmetHUD';
 import CornerMetrics from './components/CornerMetrics';
@@ -186,8 +187,11 @@ export default function App() {
           camera={{ position: [0, 20, 45], fov: 45, far: 5000 }}
           gl={{ antialias: true }}
           shadows
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: '100%', height: '100%', display: 'block' }}
         >
+          {/* Resize Handler */}
+          <CanvasResizeHandler />
+          
           <Stars
             radius={200}
             depth={100}
