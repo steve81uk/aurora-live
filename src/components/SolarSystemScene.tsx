@@ -19,6 +19,7 @@ interface SolarSystemSceneProps {
   surfaceMode?: boolean;
   surfaceLocation?: import('../data/surfaceLocations').SurfaceLocation | null;
   mythicTheme?: import('../types/mythic').AppTheme;
+  showSatellites?: boolean;
 }
 
 interface PlanetConfig {
@@ -39,7 +40,8 @@ const PLANETS: PlanetConfig[] = [
   { name: 'Jupiter', body: Astronomy.Body.Jupiter, radius: 4.0, color: '#C88B3A', emissive: '#C88B3A', axialTilt: 3.1 },
   { name: 'Saturn', body: Astronomy.Body.Saturn, radius: 3.5, color: '#FAD5A5', emissive: '#FAD5A5', axialTilt: 26.7 },
   { name: 'Uranus', body: Astronomy.Body.Uranus, radius: 2.0, color: '#4FD0E7', emissive: '#4FD0E7', axialTilt: 97.8 },
-  { name: 'Neptune', body: Astronomy.Body.Neptune, radius: 2.0, color: '#4169E1', emissive: '#4169E1', axialTilt: 28.3 }
+  { name: 'Neptune', body: Astronomy.Body.Neptune, radius: 2.0, color: '#4169E1', emissive: '#4169E1', axialTilt: 28.3 },
+  { name: 'Pluto', body: Astronomy.Body.Pluto, radius: 0.2, color: '#8B7355', emissive: '#8B7355', axialTilt: 122.5 }
 ];
 
 // CRITICAL: astronomy-engine returns AU coordinates (Earth = ~1.0 AU from Sun)
@@ -219,12 +221,15 @@ function Planet({
   const [hovered, setHovered] = useState(false);
   const [distance, setDistance] = useState(0);
   
-  // Load Earth texture
-  const earthTexture = useMemo(() => {
+  // Load Earth textures (day, night, clouds)
+  const earthTextures = useMemo(() => {
     if (config.name === 'Earth') {
       const loader = new THREE.TextureLoader();
-      // Using free NASA Blue Marble texture
-      return loader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg');
+      return {
+        day: loader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg'),
+        night: loader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_lights_2048.png'),
+        clouds: loader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_clouds_1024.png'),
+      };
     }
     return null;
   }, [config.name]);
@@ -301,15 +306,20 @@ function Planet({
           }}
         >
           <sphereGeometry args={[config.radius, 64, 64]} />
-          {config.name === 'Earth' && earthTexture ? (
-            <meshStandardMaterial
-              map={earthTexture}
-              roughness={0.8}
-              metalness={0.2}
-              transparent={surfaceMode && focusedBody === config.name}
-              opacity={surfaceMode && focusedBody === config.name ? 0.15 : 1.0}
-              side={THREE.DoubleSide}
-            />
+          {config.name === 'Earth' && earthTextures ? (
+            <>
+              <meshStandardMaterial
+                map={earthTextures.day}
+                emissiveMap={earthTextures.night}
+                emissive="#ffffff"
+                emissiveIntensity={0.5}
+                roughness={0.5}
+                metalness={0.1}
+                transparent={surfaceMode && focusedBody === config.name}
+                opacity={surfaceMode && focusedBody === config.name ? 0.15 : 1.0}
+                side={THREE.DoubleSide}
+              />
+            </>
           ) : (
             <meshStandardMaterial
               color={config.color}
@@ -323,6 +333,32 @@ function Planet({
             />
           )}
         </mesh>
+        
+        {/* Earth Atmosphere Glow */}
+        {config.name === 'Earth' && (
+          <mesh>
+            <sphereGeometry args={[config.radius * 1.02, 32, 32]} />
+            <meshBasicMaterial
+              color="#0099ff"
+              transparent
+              opacity={0.1}
+              side={THREE.BackSide}
+            />
+          </mesh>
+        )}
+        
+        {/* Earth Clouds Layer */}
+        {config.name === 'Earth' && earthTextures && (
+          <mesh>
+            <sphereGeometry args={[config.radius * 1.01, 32, 32]} />
+            <meshStandardMaterial
+              map={earthTextures.clouds}
+              transparent
+              opacity={0.4}
+              depthWrite={false}
+            />
+          </mesh>
+        )}
         
         {/* Holo-Card Info (visible only when focused) */}
         {focusedBody === config.name && (
@@ -879,7 +915,8 @@ export default function SolarSystemScene({
   controlsRef,
   surfaceMode = false,
   surfaceLocation: _surfaceLocation = null,
-  mythicTheme: _mythicTheme = 'SCI_FI'
+  mythicTheme: _mythicTheme = 'SCI_FI',
+  showSatellites = true
 }: SolarSystemSceneProps) {
   const { camera, size } = useThree();
   const showTrails = true; // TODO: Add toggle in UI
@@ -1086,9 +1123,13 @@ export default function SolarSystemScene({
       <Moon earthPosition={earthPosition} currentDate={currentDate} />
       
       {/* Space Assets */}
-      <ISS earthPosition={earthPosition} currentDate={currentDate} />
-      <DSCOVR earthPosition={earthPosition} />
-      <L1TrajectoryLine earthPosition={earthPosition} />
+      {showSatellites && (
+        <>
+          <ISS earthPosition={earthPosition} currentDate={currentDate} />
+          <DSCOVR earthPosition={earthPosition} />
+          <L1TrajectoryLine earthPosition={earthPosition} />
+        </>
+      )}
 
       <SolarWindParticles speed={solarWindSpeed} />
       
