@@ -50,6 +50,18 @@ export function getBodyPosition(bodyName: string, date: Date): THREE.Vector3 {
     );
   }
 
+  // Special case: ISS (orbits Earth, position calculated separately)
+  if (bodyName === 'ISS') {
+    // ISS position is handled by the ISS component itself
+    // Return Earth position as placeholder (ISS adds offset)
+    const earthHelio = Astronomy.HelioVector(Astronomy.Body.Earth, astroTime);
+    return new THREE.Vector3(
+      earthHelio.x * AU_TO_SCREEN_UNITS,
+      earthHelio.y * AU_TO_SCREEN_UNITS,
+      earthHelio.z * AU_TO_SCREEN_UNITS
+    );
+  }
+
   // Planets: Use astronomy-engine
   const bodyMap: { [key: string]: Astronomy.Body } = {
     'Mercury': Astronomy.Body.Mercury,
@@ -95,7 +107,8 @@ export function getOptimalViewDistance(bodyName: string): number {
     'Neptune': 12,
     'Pluto': 3,
     'Moon': 3,
-    'Parker Solar Probe': 2
+    'Parker Solar Probe': 2,
+    'ISS': 2
   };
 
   return distances[bodyName] || 10; // Default to 10 if unknown

@@ -13,6 +13,7 @@ import { QuickNav } from './components/QuickNav';
 import { TelemetryDeck } from './components/TelemetryDeck'; 
 import { SkyViewer } from './components/SkyViewer';
 import { HUDOverlay } from './components/HUDOverlay';
+import LoadingScreen from './components/LoadingScreen';
 
 function Loader() {
   return <Html center><div className="text-cyan-500 font-mono animate-pulse">INITIALIZING SYSTEM...</div></Html>;
@@ -23,9 +24,26 @@ export default function App() {
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
   const [focusedBodyPosition, setFocusedBodyPosition] = useState<THREE.Vector3 | null>(null);
   const [viewingLocation, setViewingLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   
   const controlsRef = useRef<any>(null);
   const { data } = useAuroraData(LOCATIONS[0]);
+
+  // Simulated loading progress
+  useEffect(() => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 15 + 5;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        setTimeout(() => setIsLoading(false), 500); // Short delay before hiding
+      }
+      setLoadingProgress(progress);
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleTravel = (targetName: string, location?: any) => {
     if (targetName === 'Earth' && location) {
@@ -148,6 +166,9 @@ export default function App() {
           />
         </div>
       )}
+      
+      {/* LAYER 3: Loading Screen */}
+      <LoadingScreen isLoading={isLoading} progress={loadingProgress} />
     </div>
   );
 }

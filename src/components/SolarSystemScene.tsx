@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import * as Astronomy from 'astronomy-engine';
 import { TextureLoader } from 'three';
 import { RealisticSun } from './RealisticSun';
+import ISS from './ISS';
 import { calculateDistance, formatDistance, calculateLightTravelTime, calculateProbeTravelTime, getDistanceFunFact } from '../utils/distance';
 
 // --- CONFIGURATION ---
@@ -109,9 +110,10 @@ function OrbitTrail({ body, color }: any) {
 // ... MoonSystem & OrbitingMoon (Keep same as before, omitted for brevity but include in file) ...
 // (I will assume you have the MoonSystem code from previous step, if not I can paste it)
 
-function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus }: any) {
+function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus, focusedBody }: any) {
   const groupRef = useRef<THREE.Group>(null);
   const cloudsRef = useRef<THREE.Mesh>(null);
+  const [earthPosition, setEarthPosition] = useState(new THREE.Vector3());
   
   const [day, night, clouds] = useLoader(TextureLoader, [
     'textures/8k_earth_daymap.jpg',
@@ -124,12 +126,19 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
     if (groupRef.current) {
       const astroTime = Astronomy.MakeTime(currentDate);
       const helio = Astronomy.HelioVector(config.body, astroTime);
-      groupRef.current.position.set(helio.x * AU_TO_SCREEN_UNITS, helio.y * AU_TO_SCREEN_UNITS, helio.z * AU_TO_SCREEN_UNITS);
+      const pos = new THREE.Vector3(
+        helio.x * AU_TO_SCREEN_UNITS,
+        helio.y * AU_TO_SCREEN_UNITS,
+        helio.z * AU_TO_SCREEN_UNITS
+      );
+      groupRef.current.position.copy(pos);
+      setEarthPosition(pos);
     }
   });
 
   return (
-    <group ref={groupRef}>
+    <>
+      <group ref={groupRef}>
       {/* CLICKABLE HITBOX (Transparent, NOT invisible) */}
       <mesh onClick={(e) => { e.stopPropagation(); onBodyFocus('Earth'); }}>
          <sphereGeometry args={[config.radius * 1.15, 32, 32]} />
@@ -166,6 +175,10 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
       {/* MOON */}
       <Moon currentDate={currentDate} onBodyFocus={onBodyFocus} />
     </group>
+    
+    {/* ISS - Orbits Earth */}
+    <ISS onBodyFocus={onBodyFocus} focusedBody={focusedBody} earthPosition={earthPosition} />
+  </>
   );
 }
 
@@ -336,7 +349,8 @@ export default function SolarSystemScene({ kpValue, currentDate = new Date(), fo
                kpValue={kpValue} 
                currentDate={currentDate} 
                onLocationClick={onLocationClick} 
-               onBodyFocus={onBodyFocus} 
+               onBodyFocus={onBodyFocus}
+               focusedBody={focusedBody}
             />
           ) : (
             <TexturedPlanet 
