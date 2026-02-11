@@ -6,6 +6,7 @@ import * as Astronomy from 'astronomy-engine';
 import { TextureLoader } from 'three';
 import { RealisticSun } from './RealisticSun';
 import ISS from './ISS';
+import UFO from './UFO';
 import { calculateDistance, formatDistance, calculateLightTravelTime, calculateProbeTravelTime, getDistanceFunFact } from '../utils/distance';
 
 // --- CONFIGURATION ---
@@ -235,6 +236,11 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
   const texture = useLoader(TextureLoader, config.texture || 'textures/2k_mercury.jpg');
   const [hovered, setHovered] = useState(false);
   const [currentPosition, setCurrentPosition] = useState<THREE.Vector3>(new THREE.Vector3());
+  
+  // Load ring texture if it's Saturn
+  const ringTexture = config.name === 'Saturn' 
+    ? useLoader(TextureLoader, 'textures/2k_saturn_ring_alpha.png')
+    : null;
 
   useFrame(({clock}) => {
     if (groupRef.current) {
@@ -275,6 +281,19 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
         <sphereGeometry args={[config.radius, 32, 32]} />
         <meshStandardMaterial map={texture} />
       </mesh>
+      
+      {/* Saturn Rings */}
+      {config.name === 'Saturn' && ringTexture && (
+        <mesh rotation={[Math.PI / 2.3, 0, 0]} receiveShadow>
+          <ringGeometry args={[config.radius * 1.2, config.radius * 2.2, 64]} />
+          <meshStandardMaterial 
+            map={ringTexture} 
+            transparent 
+            opacity={0.9}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
 
       {/* ENHANCED HOVER CARD with Distance Info */}
       {hovered && focusedBody !== config.name && (
@@ -338,6 +357,7 @@ export default function SolarSystemScene({ kpValue, currentDate = new Date(), fo
     <>
       <RealisticSun onBodyFocus={onBodyFocus} />
       <ParkerSolarProbe onBodyFocus={onBodyFocus} />
+      <UFO onBodyFocus={onBodyFocus} focusedBody={focusedBody} currentDate={currentDate} />
 
       {PLANETS.map(planet => (
         <group key={planet.name}>
