@@ -4,6 +4,7 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import * as Astronomy from 'astronomy-engine';
 import { TextureLoader } from 'three';
+import RealisticSun from './RealisticSun';
 
 // --- CONFIGURATION ---
 const AU_TO_SCREEN_UNITS = 40;
@@ -185,13 +186,10 @@ export default function SolarSystemScene({ kpValue, focusedBody, onBodyFocus, on
   return (
     <>
       <ambientLight intensity={0.2} />
-      <pointLight position={[0,0,0]} intensity={1.5} decay={0} />
       
+      {/* Realistic Sun with corona and glow layers */}
       <group onClick={() => onBodyFocus(null)}>
-        <mesh>
-          <sphereGeometry args={[5, 32, 32]} />
-          <meshBasicMaterial color="#FDB813" />
-        </mesh>
+        <RealisticSun />
       </group>
 
       {PLANETS.map(planet => (
