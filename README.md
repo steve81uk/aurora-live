@@ -1,83 +1,143 @@
-# 🌟 Solar Admiral - Galactic Positioning System
+# 🌟 Aurora Live - Galactic Positioning System
 
-**Real-time space weather monitoring meets immersive 3D solar system visualization with mythic themes**
+**Real-time space weather monitoring meets astronomically accurate 3D solar system visualization**
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/steve81uk/aurora-live)
-[![Bundle Size](https://img.shields.io/badge/bundle-349%20KB%20gzipped-blue)](https://github.com/steve81uk/aurora-live)
+[![Bundle Size](https://img.shields.io/badge/bundle-340%20KB%20gzipped-blue)](https://github.com/steve81uk/aurora-live)
 [![React](https://img.shields.io/badge/React-19.0-blue?logo=react)](https://react.dev/)
 [![Three.js](https://img.shields.io/badge/Three.js-r172-black?logo=three.js)](https://threejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-7.3-purple?logo=vite)](https://vitejs.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-![Solar Admiral - Explorer View](./public/screenshots/demo1.png)
+![Aurora Live - Solar System Explorer](./public/screenshots/demo1.png)
 
 ---
 
-## ✨ Current Status (v0.13.0)
+## ✨ Current Status (v0.16.2)
 
-- ✅ **3D Physics Engine**: Real planetary orbits with astronomy-engine
-- ✅ **Interactive Solar System**: 9 planets (including Pluto!) + Moon with realistic orbits
-- ✅ **Dual-View System**: Explorer (3D) + Mission Control (analyst dashboard)
-- ✅ **Mythic Theme System**: Norse, Sheikah, and Sci-Fi themes
-- ✅ **Sky Viewer Integration**: Click cities to see Stellarium sky maps
-- ✅ **HOLO HUD Planet Info**: Hover any planet for detailed data overlay
-- ✅ **Neural Data Stream**: 9 real-time metrics with confidence scores
-- ✅ **Easter Egg**: 🛰️ Voyager 1 probe (find it!)
-- 🚧 **Real-Time API Integration**: Partially implemented
-- 📋 **Historical Data**: Planned (NASA DONKI integration)
+**Latest Updates:**
+- ✅ **Real-Time Simulation**: Earth rotates accurately with UTC time (±1 second precision)
+- ✅ **51 Global Cities**: Worldwide locations with aurora frequency data
+- ✅ **Moon Texture**: Realistic lunar surface (2k resolution)
+- ✅ **Saturn's Rings**: Beautiful ring system with alpha transparency
+- ✅ **UFO Easter Egg**: Hidden alien spacecraft behind Mercury 🛸
+- ✅ **Time Travel**: Scrub through past/future with play/pause/skip controls
+- ✅ **ISS Real-Time Tracking**: Live position from wheretheiss.at API
+- ✅ **Distance Metrics**: See km/miles/AU + light/probe travel times
+- ✅ **Universal Click-to-Center**: All bodies clickable with smooth camera animation
+- ✅ **Larger Hover Text**: Easy-to-read planet info cards
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-### 🎭 Dual-View Experience
+### 🌍 Astronomically Accurate Solar System
 
-**Explorer Mode** - Immersive 3D solar system
-- Navigate through real-time planetary positions
-- **HOLO HUD Overlays**: Hover planets to see distance, radius, axial tilt
-- 3 mythic themes: Norse (Bifröst), Sheikah (Ancient Tech), Sci-Fi (Standard)
-- Corner metrics showing KP status, solar wind, time, and target
-- Mobile-optimized with expandable data panels
+**Real Physics & Ephemeris Data:**
+- Powered by `astronomy-engine` for real planetary positions
+- Earth rotation synchronized with UTC time (15°/hour precision)
+- 23.4° axial tilt properly applied
+- Planets orbit at actual speeds (real-time simulation)
+- Orbital positions accurate to current date/time
 
-**Mission Control Mode** - Advanced analyst dashboard
-- Neural data stream with live metrics
-- Heimdall Protocol storm warnings
-- Real-time telemetry
-- Grid-based analytical interface
+**Celestial Bodies:**
+- **9 Planets**: Mercury through Neptune + **Pluto** (with textures!)
+- **The Moon**: Realistic texture, clickable, orbits Earth
+- **The Sun**: Multi-layer corona with realistic glow
+- **ISS**: Real-time tracking (updates every 5 seconds)
+- **Parker Solar Probe**: Animated heliocentric orbit
+- **UFO**: Secret easter egg (hint: check behind Mercury!)
 
-### 🪐 Interactive Solar System
+### 🗺️ Interactive Earth
 
-**Planets & Celestial Bodies:**
-- **9 Planets**: Mercury, Venus, Earth (with textures!), Mars, Jupiter, Saturn, Uranus, Neptune, **Pluto**
-- **The Moon**: Realistic orbit around Earth (visible, animated)
-- **Earth Features**:
-  - 8K day/night textures with city lights
-  - Animated cloud layer (slow rotation)
-  - 6 clickable city locations (Reykjavik, Tromsø, Anchorage, Yellowknife, Abisko, Tasmania)
-  - Click cities → Opens Stellarium sky viewer!
-  - Aurora shell (green/red based on Kp index)
+**Earth Features:**
+- **8K Day/Night Textures** with emissive city lights
+- **Real-Time Rotation**: UK in daylight at 12:42 UTC (accurate to the second!)
+- **Animated Cloud Layer**: Synchronized with Earth rotation
+- **Aurora Shell**: Dynamic green/red glow based on Kp index
+- **51 Global Cities**: Clickable markers worldwide
+  - Aurora hotspots: Fairbanks, Tromsø, Yellowknife, Reykjavik, Kiruna, Abisko, etc.
+  - Southern hemisphere: Ushuaia, Hobart, Dunedin, Christchurch, etc.
+  - Major capitals: London, Tokyo, Moscow, Beijing, Sydney, New York, etc.
+  - Each with: lat/lon, timezone, population, aurora frequency
 
-**Camera & Navigation:**
-- **Free Flight Camera**: Click planets → 2s smooth animation → Full 360° control
-- **HOLO HUD Info**: Hover any planet to see real-time data
-- **Street-Level Zoom**: Get as close as 0.1× planet radius
-- **Orbit Trails**: 365-point ephemeris data visualized
+### ⏰ Time Travel Controls
+
+**Time Simulation System:**
+- **Real-Time Clock**: Planets move at actual orbital speeds
+- **Play/Pause**: Control time flow
+- **Skip Forward/Backward**: Jump ±1 hour or ±24 hours
+- **Jump to NOW**: Return to current date/time (green LIVE indicator)
+- **Manual Date Picker**: Select any date/time to explore
+- **TIME TRAVEL MODE**: Visual indicator when not at current time
+
+### 🎯 Universal Click-to-Focus
+
+**Smart Camera System:**
+- Click **any** celestial body to center it
+- Smooth 1.5-second animation with ease-out cubic easing
+- Optimal viewing distance per body type:
+  - Sun: 35 units
+  - Gas Giants: 18-20 units
+  - Rocky planets: 5-8 units
+  - Moon/ISS/Probes: 2-3 units
+  - UFO: 1 unit (get close!)
+
+### 📏 Distance Calculations
+
+**Inter-Body Distance Metrics:**
+- Focus on one body, hover over another → See distance between them
+- **Formats**: Kilometers, Miles, AU
+- **Travel Times**: Light travel time + Probe travel time (Parker/Voyager/Standard)
+- **Fun Facts**: Comparisons (e.g., "That's 342× Earth-Moon distance!")
+- Updates in real-time as planets orbit
+
+### 🪐 Detailed Planet Cards
+
+**Enhanced Hover Information (Large, Readable Text):**
+- Planet name (2xl bold text)
+- Type: Rocky / Gas Giant / Ice Giant / Dwarf
+- Temperature: Surface/atmosphere temp
+- Distance from Sun: AU units
+- Distance from focused body (if applicable)
+- Light/probe travel times
+- Fun facts about the distance
+
+### 🎨 Visual Enhancements
+
+- **Saturn's Rings**: Tilted ring system with transparency
+- **Orbit Trails**: 365-point real ephemeris paths
 - **10,000-Star Background**: 3-layer parallax depth
-- **Shooting Stars**: Random meteors (every 3-8s)
+- **Aurora Shell**: Kp-reactive atmospheric glow
+- **Loading Screen**: Aurora ring animation with progress stages
 
-**Easter Eggs:**
-- 🛰️ **Voyager 1**: Find the tiny probe leaving the solar system!
-- More secrets to discover...
+---
 
-### ⚡ Space Weather Monitoring
+## 🛠️ Technology Stack
 
-**Neural Data Stream** (9 metrics with AI confidence):
-- Kp Index (NOAA real-time)
-- Solar Wind Speed
-- IMF Bz (critical for auroras)
-- Proton Density
-- **Novel Metrics**:
+**Core:**
+- **React 19** - UI framework
+- **TypeScript 5.7** - Type safety
+- **Vite 7.3** - Lightning-fast build tool
+- **Three.js r172** - 3D graphics
+- **@react-three/fiber** - React renderer for Three.js
+- **@react-three/drei** - Three.js helpers
+
+**Astronomical Accuracy:**
+- **astronomy-engine** - Real planetary ephemerides
+- **wheretheiss.at API** - Real-time ISS position
+
+**Data Sources:**
+- NOAA Space Weather Prediction Center (Kp index, solar wind)
+- NASA APIs (future: DONKI events)
+- wheretheiss.at (ISS tracking)
+
+**Styling:**
+- **Tailwind CSS** - Utility-first styling
+- **Lucide React** - Icon system
+
+---
   - Sköll Velocity (mythic solar wind)
 
   - Helheim Flux (magnetic disturbance)
