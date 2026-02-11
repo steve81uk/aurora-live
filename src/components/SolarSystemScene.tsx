@@ -8,10 +8,12 @@ import { RealisticSun } from './RealisticSun';
 import ISS from './ISS';
 import UFO from './UFO';
 import { calculateDistance, formatDistance, calculateLightTravelTime, calculateProbeTravelTime, getDistanceFunFact } from '../utils/distance';
+import { CITIES } from '../constants/cities';
 
 // --- CONFIGURATION ---
 const AU_TO_SCREEN_UNITS = 40;
 
+// Export PLANETS for external use
 export const PLANETS = [
   { name: 'Mercury', body: Astronomy.Body.Mercury, radius: 0.4, color: '#A5A5A5', texture: 'textures/2k_mercury.jpg', type: 'Rocky', temp: '430°C', distance: '0.39 AU' },
   { name: 'Venus', body: Astronomy.Body.Venus, radius: 0.9, color: '#E3BB76', texture: 'textures/2k_venus_surface.jpg', type: 'Rocky', temp: '462°C', distance: '0.72 AU' },
@@ -22,12 +24,6 @@ export const PLANETS = [
   { name: 'Uranus', body: Astronomy.Body.Uranus, radius: 2.0, color: '#4FD0E7', texture: 'textures/2k_uranus.jpg', type: 'Ice Giant', temp: '-197°C', distance: '19.22 AU' },
   { name: 'Neptune', body: Astronomy.Body.Neptune, radius: 2.0, color: '#4169E1', texture: 'textures/2k_neptune.jpg', type: 'Ice Giant', temp: '-201°C', distance: '30.05 AU' },
   { name: 'Pluto', body: Astronomy.Body.Pluto, radius: 0.2, color: '#968570', texture: 'textures/2k_mercury.jpg', type: 'Dwarf', temp: '-232°C', distance: '39.48 AU' } 
-];
-
-export const CITIES = [
-  { name: 'Anchorage', lat: 61.2181, lon: -149.9003, color: '#00ffcc' },
-  { name: 'Reykjavik', lat: 64.1466, lon: -21.9426, color: '#00ffcc' },
-  { name: 'Tromsø', lat: 69.6492, lon: 18.9553, color: '#00ffcc' },
 ];
 
 function latLonToVector3(lat: number, lon: number, radius: number) {
@@ -207,9 +203,18 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
         const pos = latLonToVector3(city.lat, city.lon, config.radius * 1.02);
         return (
           <group key={city.name} position={pos}>
-            <mesh onClick={(e) => { e.stopPropagation(); onLocationClick(city); }}>
+            <mesh 
+              onClick={(e) => { e.stopPropagation(); onLocationClick(city); }}
+              onPointerOver={(e) => {
+                e.stopPropagation();
+                document.body.style.cursor = 'pointer';
+              }}
+              onPointerOut={() => {
+                document.body.style.cursor = 'auto';
+              }}
+            >
               <sphereGeometry args={[0.03, 16, 16]} />
-              <meshBasicMaterial color="#00ffcc" toneMapped={false} />
+              <meshBasicMaterial color={city.color} toneMapped={false} />
             </mesh>
           </group>
         );
@@ -259,7 +264,7 @@ function Moon({ currentDate, onBodyFocus }: { currentDate: Date, onBodyFocus: (n
       {/* Moon surface */}
       <mesh castShadow receiveShadow>
         <sphereGeometry args={[0.27, 32, 32]} />
-        <meshStandardMaterial color="#cccccc" roughness={0.9} />
+        <meshStandardMaterial map={useLoader(TextureLoader, 'textures/2k_moon.jpg')} roughness={0.9} />
       </mesh>
       
       {/* Label */}
@@ -339,29 +344,29 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
         </mesh>
       )}
 
-      {/* ENHANCED HOVER CARD with Distance Info */}
+      {/* ENHANCED HOVER CARD with Distance Info - LARGER TEXT */}
       {hovered && focusedBody !== config.name && (
-        <Html distanceFactor={20} position={[0, config.radius + 1, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="bg-black/90 backdrop-blur-md border border-cyan-500/50 p-3 rounded-lg text-cyan-400 w-52 shadow-[0_0_20px_rgba(0,255,255,0.3)]">
-            <div className="text-sm font-bold text-white mb-2">{config.name.toUpperCase()}</div>
+        <Html distanceFactor={12} position={[0, config.radius + 1.5, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="bg-black/95 backdrop-blur-xl border-l-4 border-cyan-400 p-4 rounded-lg shadow-[0_0_40px_rgba(0,255,255,0.4)] min-w-[240px]">
+            <div className="text-2xl font-bold text-white mb-3 tracking-wide">{config.name.toUpperCase()}</div>
             
             {/* Basic Info */}
-            <div className="text-[10px] grid grid-cols-2 gap-1 text-gray-300 mb-2">
-               <span>TEMP:</span> <span className="text-right text-cyan-200">{config.temp}</span>
-               <span>FROM SUN:</span> <span className="text-right text-cyan-200">{config.distance}</span>
-               <span>TYPE:</span> <span className="text-right text-cyan-200">{config.type}</span>
+            <div className="text-base grid grid-cols-2 gap-2 text-gray-300 mb-3">
+               <span className="text-gray-400">TEMP:</span> <span className="text-right text-orange-300 font-semibold">{config.temp}</span>
+               <span className="text-gray-400">FROM SUN:</span> <span className="text-right text-green-300 font-semibold">{config.distance}</span>
+               <span className="text-gray-400">TYPE:</span> <span className="text-right text-cyan-300 font-semibold">{config.type}</span>
             </div>
             
             {/* Distance Info (if focused on another body) */}
             {distanceInfo && focusedBody && (
-              <div className="border-t border-cyan-900/50 pt-2 mt-2">
-                <div className="text-[9px] text-yellow-400 font-bold mb-1">
-                  DISTANCE FROM {focusedBody.toUpperCase()}
+              <div className="border-t border-cyan-900/50 pt-3 mt-3">
+                <div className="text-sm text-yellow-400 font-bold mb-2">
+                  FROM {focusedBody.toUpperCase()}
                 </div>
-                <div className="text-[10px] space-y-1">
+                <div className="text-sm space-y-1.5">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Distance:</span>
-                    <span className="text-white font-mono">{formatDistance(distanceInfo.km, 'km')}</span>
+                    <span className="text-white font-mono text-base">{formatDistance(distanceInfo.km, 'km')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400"></span>
@@ -369,16 +374,27 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
                   </div>
                   {lightTime && (
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Light:</span>
+                      <span className="text-gray-400">Light Travel:</span>
                       <span className="text-green-400 font-mono">{lightTime.value.toFixed(1)} {lightTime.unit}</span>
                     </div>
                   )}
                   {probeTime && (
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Probe:</span>
+                      <span className="text-gray-400">Probe Travel:</span>
                       <span className="text-orange-400 font-mono">{probeTime.value.toFixed(1)} {probeTime.unit}</span>
                     </div>
                   )}
+                </div>
+                {funFact && <div className="text-xs text-gray-500 italic mt-2">{funFact}</div>}
+              </div>
+            )}
+            
+            <div className="mt-3 text-center bg-cyan-900/60 py-2 rounded-lg text-white text-base font-bold animate-pulse">
+              ⭐ CLICK TO ORBIT ⭐
+            </div>
+          </div>
+        </Html>
+      )}
                   {funFact && (
                     <div className="text-[8px] text-purple-300 italic mt-1 text-center">
                       {funFact}
