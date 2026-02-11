@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import * as Astronomy from 'astronomy-engine';
 import { TextureLoader } from 'three';
 import { RealisticSun } from './RealisticSun';
+import { calculateDistance, formatDistance, calculateLightTravelTime, calculateProbeTravelTime, getDistanceFunFact } from '../utils/distance';
 
 // --- CONFIGURATION ---
 const AU_TO_SCREEN_UNITS = 40;
@@ -216,18 +217,34 @@ function Moon({ currentDate, onBodyFocus }: { currentDate: Date, onBodyFocus: (n
   );
 }
 
-function TexturedPlanet({ config, currentDate, focusedBody, onBodyFocus }: any) {
+function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition, onBodyFocus }: any) {
   const groupRef = useRef<THREE.Group>(null);
   const texture = useLoader(TextureLoader, config.texture || 'textures/2k_mercury.jpg');
   const [hovered, setHovered] = useState(false);
+  const [currentPosition, setCurrentPosition] = useState<THREE.Vector3>(new THREE.Vector3());
 
   useFrame(({clock}) => {
     if (groupRef.current) {
       const astroTime = Astronomy.MakeTime(currentDate);
       const helio = Astronomy.HelioVector(config.body, astroTime);
-      groupRef.current.position.set(helio.x * AU_TO_SCREEN_UNITS, helio.y * AU_TO_SCREEN_UNITS, helio.z * AU_TO_SCREEN_UNITS);
+      const pos = new THREE.Vector3(
+        helio.x * AU_TO_SCREEN_UNITS,
+        helio.y * AU_TO_SCREEN_UNITS,
+        helio.z * AU_TO_SCREEN_UNITS
+      );
+      groupRef.current.position.copy(pos);
+      setCurrentPosition(pos);
     }
   });
+
+  // Calculate distance if focused on another body
+  const distanceInfo = focusedBody && focusedBodyPosition && focusedBody !== config.name
+    ? calculateDistance(focusedBodyPosition, currentPosition)
+    : null;
+  
+  const lightTime = distanceInfo ? calculateLightTravelTime(distanceInfo.km) : null;
+  const probeTime = distanceInfo ? calculateProbeTravelTime(distanceInfo.km, 'standard') : null;
+  const funFact = distanceInfo ? getDistanceFunFact(distanceInfo, focusedBody, config.name) : null;
 
   return (
     <group ref={groupRef}>
@@ -246,16 +263,55 @@ function TexturedPlanet({ config, currentDate, focusedBody, onBodyFocus }: any) 
         <meshStandardMaterial map={texture} />
       </mesh>
 
-      {/* R.U.M. (Really Useful Metrics) HOVER CARD */}
+      {/* ENHANCED HOVER CARD with Distance Info */}
       {hovered && focusedBody !== config.name && (
         <Html distanceFactor={20} position={[0, config.radius + 1, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="bg-black/80 backdrop-blur-md border border-cyan-500/50 p-3 rounded-lg text-cyan-400 w-40 shadow-[0_0_15px_rgba(0,255,255,0.2)]">
-            <div className="text-sm font-bold text-white mb-1">{config.name.toUpperCase()}</div>
-            <div className="text-[10px] grid grid-cols-2 gap-1 text-gray-300">
+          <div className="bg-black/90 backdrop-blur-md border border-cyan-500/50 p-3 rounded-lg text-cyan-400 w-52 shadow-[0_0_20px_rgba(0,255,255,0.3)]">
+            <div className="text-sm font-bold text-white mb-2">{config.name.toUpperCase()}</div>
+            
+            {/* Basic Info */}
+            <div className="text-[10px] grid grid-cols-2 gap-1 text-gray-300 mb-2">
                <span>TEMP:</span> <span className="text-right text-cyan-200">{config.temp}</span>
-               <span>DIST:</span> <span className="text-right text-cyan-200">{config.distance}</span>
+               <span>FROM SUN:</span> <span className="text-right text-cyan-200">{config.distance}</span>
                <span>TYPE:</span> <span className="text-right text-cyan-200">{config.type}</span>
             </div>
+            
+            {/* Distance Info (if focused on another body) */}
+            {distanceInfo && focusedBody && (
+              <div className="border-t border-cyan-900/50 pt-2 mt-2">
+                <div className="text-[9px] text-yellow-400 font-bold mb-1">
+                  DISTANCE FROM {focusedBody.toUpperCase()}
+                </div>
+                <div className="text-[10px] space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Distance:</span>
+                    <span className="text-white font-mono">{formatDistance(distanceInfo.km, 'km')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400"></span>
+                    <span className="text-gray-300 font-mono">{formatDistance(distanceInfo.miles, 'mi')}</span>
+                  </div>
+                  {lightTime && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Light:</span>
+                      <span className="text-green-400 font-mono">{lightTime.value.toFixed(1)} {lightTime.unit}</span>
+                    </div>
+                  )}
+                  {probeTime && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Probe:</span>
+                      <span className="text-orange-400 font-mono">{probeTime.value.toFixed(1)} {probeTime.unit}</span>
+                    </div>
+                  )}
+                  {funFact && (
+                    <div className="text-[8px] text-purple-300 italic mt-1 text-center">
+                      {funFact}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div className="text-[9px] text-center mt-2 text-cyan-500 animate-pulse">CLICK TO FOCUS</div>
           </div>
         </Html>
@@ -264,7 +320,7 @@ function TexturedPlanet({ config, currentDate, focusedBody, onBodyFocus }: any) 
   );
 }
 
-export default function SolarSystemScene({ kpValue, currentDate = new Date(), focusedBody, onBodyFocus, controlsRef, onLocationClick }: any) {
+export default function SolarSystemScene({ kpValue, currentDate = new Date(), focusedBody, focusedBodyPosition, onBodyFocus, controlsRef, onLocationClick }: any) {
   return (
     <>
       <RealisticSun onBodyFocus={onBodyFocus} />
@@ -286,7 +342,8 @@ export default function SolarSystemScene({ kpValue, currentDate = new Date(), fo
             <TexturedPlanet 
                config={planet} 
                currentDate={currentDate} 
-               focusedBody={focusedBody} 
+               focusedBody={focusedBody}
+               focusedBodyPosition={focusedBodyPosition}
                onBodyFocus={onBodyFocus} 
             />
           )}

@@ -21,6 +21,7 @@ function Loader() {
 export default function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
+  const [focusedBodyPosition, setFocusedBodyPosition] = useState<THREE.Vector3 | null>(null);
   const [viewingLocation, setViewingLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
   
   const controlsRef = useRef<any>(null);
@@ -37,13 +38,18 @@ export default function App() {
 
   // AUTO-FOCUS CAMERA when focusedBody changes (ALL BODIES)
   useEffect(() => {
-    if (!controlsRef.current || !focusedBody) return;
+    if (!controlsRef.current || !focusedBody) {
+      setFocusedBodyPosition(null);
+      return;
+    }
     
     const controls = controlsRef.current;
     const camera = controls.object;
     
     // Get body position and optimal viewing distance
     const bodyPosition = getBodyPosition(focusedBody, currentDate);
+    setFocusedBodyPosition(bodyPosition); // Store for distance calculations
+    
     const viewDistance = getOptimalViewDistance(focusedBody);
     const targetCameraPos = calculateCameraPosition(bodyPosition, viewDistance);
     
@@ -95,6 +101,7 @@ export default function App() {
                 kpValue={data.kpIndex?.kpValue || 3}
                 currentDate={currentDate}
                 focusedBody={focusedBody}
+                focusedBodyPosition={focusedBodyPosition}
                 onBodyFocus={setFocusedBody}
                 onLocationClick={setViewingLocation}
                 controlsRef={controlsRef}
