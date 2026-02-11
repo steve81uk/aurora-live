@@ -113,6 +113,7 @@ function OrbitTrail({ body, color }: any) {
 
 function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus, focusedBody }: any) {
   const groupRef = useRef<THREE.Group>(null);
+  const earthMeshRef = useRef<THREE.Mesh>(null);
   const cloudsRef = useRef<THREE.Mesh>(null);
   const [earthPosition, setEarthPosition] = useState(new THREE.Vector3());
   
@@ -123,7 +124,6 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
   ]);
 
   useFrame(() => {
-    if (cloudsRef.current) cloudsRef.current.rotation.y += 0.0003;
     if (groupRef.current) {
       const astroTime = Astronomy.MakeTime(currentDate);
       const helio = Astronomy.HelioVector(config.body, astroTime);
@@ -135,18 +135,60 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
       groupRef.current.position.copy(pos);
       setEarthPosition(pos);
     }
+    
+    // ACCURATE EARTH ROTATION based on real time
+    if (earthMeshRef.current && groupRef.current) {
+      // Calculate rotation to ensure correct day/night at current UTC time
+      // The Sun is at origin [0,0,0], Earth orbits around it
+      
+      // Get Earth's current position relative to Sun
+      const earthToSun = new THREE.Vector3(0, 0, 0).sub(groupRef.current.position).normalize();
+      
+      // Calculate the angle Earth needs to rotate so that noon (12:00 UTC) at Greenwich (0° lon) faces the Sun
+      // At UTC noon, Greenwich should face the Sun
+      const utcHours = currentDate.getUTCHours();
+      const utcMinutes = currentDate.getUTCMinutes();
+      const utcSeconds = currentDate.getUTCSeconds();
+      const utcTimeInHours = utcHours + utcMinutes / 60 + utcSeconds / 3600;
+      
+      // Hours from noon (when Greenwich should face Sun)
+      const hoursFromNoon = utcTimeInHours - 12;
+      
+      // Earth rotates 360° in 24 hours = 15° per hour
+      const rotationDegrees = hoursFromNoon * 15;
+      
+      // Also need to account for Earth's orbital position
+      // Calculate angle from Sun to Earth in XZ plane
+      const earthPos = groupRef.current.position;
+      const orbitalAngle = Math.atan2(earthPos.z, earthPos.x);
+      
+      // Combine rotation: base rotation + orbital position adjustment
+      // The texture is oriented with Greenwich at 0° longitude facing +X initially
+      // We need to rotate so Greenwich faces the Sun at noon UTC
+      const finalRotation = (-orbitalAngle) + (rotationDegrees * Math.PI / 180);
+      
+      earthMeshRef.current.rotation.y = finalRotation;
+      
+      // Clouds rotate slightly faster (wind effect) but stay synchronized
+      if (cloudsRef.current) {
+        cloudsRef.current.rotation.y = finalRotation + 0.1; // Slight offset for atmosphere drift
+      }
+    }
   });
 
   return (
     <>
       <group ref={groupRef}>
+      {/* Apply Earth's axial tilt (23.4°) */}
+      <group rotation={[0, 0, 23.4 * Math.PI / 180]}>
+      
       {/* CLICKABLE HITBOX (Transparent, NOT invisible) */}
       <mesh onClick={(e) => { e.stopPropagation(); onBodyFocus('Earth'); }}>
          <sphereGeometry args={[config.radius * 1.15, 32, 32]} />
          <meshBasicMaterial transparent opacity={0} /> 
       </mesh>
 
-      <mesh castShadow receiveShadow>
+      <mesh ref={earthMeshRef} castShadow receiveShadow>
         <sphereGeometry args={[config.radius, 64, 64]} />
         <meshStandardMaterial map={day} emissiveMap={night} emissiveIntensity={0.5} transparent={false} />
       </mesh>
@@ -175,6 +217,8 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
       
       {/* MOON */}
       <Moon currentDate={currentDate} onBodyFocus={onBodyFocus} />
+      
+      </group> {/* Close axial tilt group */}
     </group>
     
     {/* ISS - Orbits Earth */}
