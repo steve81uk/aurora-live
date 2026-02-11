@@ -38,8 +38,10 @@ function latLonToVector3(lat: number, lon: number, radius: number) {
 
 // --- SUB-COMPONENTS ---
 
-function ParkerSolarProbe() {
+function ParkerSolarProbe({ onBodyFocus }: { onBodyFocus: (name: string) => void }) {
   const probeRef = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
+  
   useFrame(({ clock }) => {
     if (probeRef.current) {
       const t = clock.getElapsedTime() * 0.8; // Fast!
@@ -53,6 +55,16 @@ function ParkerSolarProbe() {
 
   return (
     <group ref={probeRef}>
+      {/* Clickable hitbox */}
+      <mesh 
+        onClick={(e) => { e.stopPropagation(); onBodyFocus('Parker Solar Probe'); }}
+        onPointerOver={() => { setHovered(true); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto'; }}
+      >
+        <sphereGeometry args={[0.5, 16, 16]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+      
       <mesh>
         <boxGeometry args={[0.2, 0.2, 0.4]} />
         <meshStandardMaterial color="white" />
@@ -62,8 +74,13 @@ function ParkerSolarProbe() {
         <cylinderGeometry args={[0.4, 0.4, 0.05, 8]} />
         <meshStandardMaterial color="#333" />
       </mesh>
-      <Html distanceFactor={15} position={[0, 1, 0]}>
-        <div className="text-[8px] text-yellow-500 font-mono whitespace-nowrap">PARKER PROBE</div>
+      
+      {/* Label */}
+      <Html distanceFactor={15} position={[0, 1, 0]} style={{ pointerEvents: 'none' }}>
+        <div className={`text-[8px] font-mono whitespace-nowrap ${hovered ? 'text-white' : 'text-yellow-500'}`}>
+          PARKER PROBE
+          {hovered && <div className="text-[7px] text-cyan-400">CLICK TO FOCUS</div>}
+        </div>
       </Html>
     </group>
   );
@@ -144,6 +161,57 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
           </group>
         );
       })}
+      
+      {/* MOON */}
+      <Moon currentDate={currentDate} onBodyFocus={onBodyFocus} />
+    </group>
+  );
+}
+
+// Moon Component (orbits Earth)
+function Moon({ currentDate, onBodyFocus }: { currentDate: Date, onBodyFocus: (name: string) => void }) {
+  const moonRef = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
+  
+  useFrame(() => {
+    if (moonRef.current) {
+      // Simplified lunar orbit (visual approximation)
+      const t = currentDate.getTime() * 0.0001;
+      moonRef.current.position.set(
+        Math.cos(t) * 6,
+        0,
+        Math.sin(t) * 6
+      );
+    }
+  });
+
+  return (
+    <group ref={moonRef}>
+      {/* Clickable hitbox */}
+      <mesh 
+        onClick={(e) => { e.stopPropagation(); onBodyFocus('Moon'); }}
+        onPointerOver={() => { setHovered(true); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto'; }}
+      >
+        <sphereGeometry args={[0.35, 16, 16]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+      
+      {/* Moon surface */}
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[0.27, 32, 32]} />
+        <meshStandardMaterial color="#cccccc" roughness={0.9} />
+      </mesh>
+      
+      {/* Label */}
+      {hovered && (
+        <Html distanceFactor={8} position={[0, 0.5, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="bg-black/80 backdrop-blur-md border border-cyan-500/50 p-2 rounded text-xs font-mono text-cyan-400">
+            <div className="font-bold text-white">MOON</div>
+            <div className="text-[9px] text-cyan-300 mt-1">CLICK TO FOCUS</div>
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
@@ -200,7 +268,7 @@ export default function SolarSystemScene({ kpValue, currentDate = new Date(), fo
   return (
     <>
       <RealisticSun onBodyFocus={onBodyFocus} />
-      <ParkerSolarProbe />
+      <ParkerSolarProbe onBodyFocus={onBodyFocus} />
 
       {PLANETS.map(planet => (
         <group key={planet.name}>

@@ -4,6 +4,7 @@ import { Html, OrbitControls } from '@react-three/drei';
 import { LOCATIONS } from './data/locations';
 import { useAuroraData } from './hooks/useAuroraData';
 import * as THREE from 'three';
+import { getBodyPosition, getOptimalViewDistance, calculateCameraPosition } from './utils/astronomy';
 
 // IMPORTS MUST MATCH EXPORTS
 import SolarSystemScene, { PLANETS, CITIES } from './components/SolarSystemScene';
@@ -34,55 +35,37 @@ export default function App() {
     }
   };
 
-  // AUTO-FOCUS CAMERA when focusedBody changes
+  // AUTO-FOCUS CAMERA when focusedBody changes (ALL BODIES)
   useEffect(() => {
     if (!controlsRef.current || !focusedBody) return;
     
     const controls = controlsRef.current;
     const camera = controls.object;
     
-    // Focal distances for each body (in screen units)
-    const distances: any = {
-      'Sun': { distance: 35, target: [0, 0, 0] },
-      'Mercury': { distance: 3, target: null }, // Will calculate
-      'Venus': { distance: 5, target: null },
-      'Earth': { distance: 8, target: null },
-      'Mars': { distance: 5, target: null },
-      'Jupiter': { distance: 15, target: null },
-      'Saturn': { distance: 15, target: null },
-      'Uranus': { distance: 10, target: null },
-      'Neptune': { distance: 10, target: null },
-      'Pluto': { distance: 3, target: null }
+    // Get body position and optimal viewing distance
+    const bodyPosition = getBodyPosition(focusedBody, currentDate);
+    const viewDistance = getOptimalViewDistance(focusedBody);
+    const targetCameraPos = calculateCameraPosition(bodyPosition, viewDistance);
+    
+    // Smooth animation
+    const duration = 1500; // ms
+    const startPos = camera.position.clone();
+    const startLookAt = controls.target.clone();
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+      
+      camera.position.lerpVectors(startPos, targetCameraPos, eased);
+      controls.target.lerpVectors(startLookAt, bodyPosition, eased);
+      controls.update();
+      
+      if (progress < 1) requestAnimationFrame(animate);
     };
-    
-    const config = distances[focusedBody];
-    if (!config) return;
-    
-    // If target is Sun, just move camera
-    if (focusedBody === 'Sun') {
-      const targetPos = new THREE.Vector3(0, 10, config.distance);
-      const targetLookAt = new THREE.Vector3(0, 0, 0);
-      
-      // Smooth animation
-      const duration = 1500; // ms
-      const startPos = camera.position.clone();
-      const startLookAt = controls.target.clone();
-      const startTime = Date.now();
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
-        
-        camera.position.lerpVectors(startPos, targetPos, eased);
-        controls.target.lerpVectors(startLookAt, targetLookAt, eased);
-        controls.update();
-        
-        if (progress < 1) requestAnimationFrame(animate);
-      };
-      animate();
-    }
-  }, [focusedBody]);
+    animate();
+  }, [focusedBody, currentDate]);
 
   return (
     <div className="relative w-screen h-screen bg-black overflow-hidden select-none">
