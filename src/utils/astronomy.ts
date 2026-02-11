@@ -6,7 +6,7 @@ const AU_TO_SCREEN_UNITS = 40;
 
 /**
  * Gets the 3D position of a celestial body at a given date
- * @param bodyName - Name of the body (e.g., 'Sun', 'Earth', 'Moon', 'Parker Solar Probe')
+ * @param bodyName - Name of the body (e.g., 'Sun', 'Earth', 'Moon', 'Parker Solar Probe', 'UFO')
  * @param date - JavaScript Date object
  * @returns THREE.Vector3 position in screen units
  */
@@ -62,6 +62,24 @@ export function getBodyPosition(bodyName: string, date: Date): THREE.Vector3 {
     );
   }
 
+  // Special case: UFO (hidden behind Mercury)
+  if (bodyName === 'UFO') {
+    const mercury = Astronomy.HelioVector(Astronomy.Body.Mercury, astroTime);
+    const earthHelio = Astronomy.HelioVector(Astronomy.Body.Earth, astroTime);
+    const toEarth = new THREE.Vector3(
+      earthHelio.x - mercury.x,
+      earthHelio.y - mercury.y,
+      earthHelio.z - mercury.z
+    ).normalize();
+    const offset = toEarth.multiplyScalar(-1.5 / AU_TO_SCREEN_UNITS);
+    
+    return new THREE.Vector3(
+      (mercury.x + offset.x) * AU_TO_SCREEN_UNITS,
+      (mercury.y + offset.y) * AU_TO_SCREEN_UNITS,
+      (mercury.z + offset.z) * AU_TO_SCREEN_UNITS
+    );
+  }
+
   // Planets: Use astronomy-engine
   const bodyMap: { [key: string]: Astronomy.Body } = {
     'Mercury': Astronomy.Body.Mercury,
@@ -108,7 +126,8 @@ export function getOptimalViewDistance(bodyName: string): number {
     'Pluto': 3,
     'Moon': 3,
     'Parker Solar Probe': 2,
-    'ISS': 2
+    'ISS': 2,
+    'UFO': 1 // Get close to the alien spacecraft!
   };
 
   return distances[bodyName] || 10; // Default to 10 if unknown

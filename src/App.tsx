@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Html, OrbitControls } from '@react-three/drei';
 import { LOCATIONS } from './data/locations';
 import { useAuroraData } from './hooks/useAuroraData';
+import { useTimeSimulation } from './hooks/useTimeSimulation';
 import * as THREE from 'three';
 import { getBodyPosition, getOptimalViewDistance, calculateCameraPosition } from './utils/astronomy';
 
@@ -20,7 +21,10 @@ function Loader() {
 }
 
 export default function App() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Use time simulation hook for real-time updates
+  const timeSimulation = useTimeSimulation(new Date(), 1); // 1 = real-time speed
+  const { currentDate, setCurrentDate, isPlaying, setIsPlaying, playbackSpeed, setPlaybackSpeed, jumpToNow, skipHours, skipDays } = timeSimulation;
+  
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
   const [focusedBodyPosition, setFocusedBodyPosition] = useState<THREE.Vector3 | null>(null);
   const [viewingLocation, setViewingLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
@@ -151,6 +155,13 @@ export default function App() {
               data={data}
               currentDate={currentDate}
               setDate={setCurrentDate}
+              isPlaying={isPlaying}
+              setIsPlaying={setIsPlaying}
+              playbackSpeed={playbackSpeed}
+              setPlaybackSpeed={setPlaybackSpeed}
+              onJumpToNow={jumpToNow}
+              onSkipHours={skipHours}
+              onSkipDays={skipDays}
            />
         </div>
       </div>

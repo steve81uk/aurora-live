@@ -1,13 +1,27 @@
-import { Play, Pause, Rewind, FastForward, Calendar } from 'lucide-react';
+import { Play, Pause, Rewind, FastForward, Calendar, SkipBack, SkipForward } from 'lucide-react';
 
 // CRITICAL: Must be 'export function', NOT 'export default function'
-export function TelemetryDeck({ data, currentDate, setDate }: any) {
+export function TelemetryDeck({ 
+  data, 
+  currentDate, 
+  setDate, 
+  isPlaying, 
+  setIsPlaying, 
+  playbackSpeed, 
+  setPlaybackSpeed,
+  onJumpToNow,
+  onSkipHours,
+  onSkipDays
+}: any) {
   const kp = data?.kpIndex?.kpValue || 0;
   const wind = data?.solarWind?.speed || 0;
   const density = data?.solarWind?.density || 0;
   
   const dateStr = currentDate ? currentDate.toLocaleDateString() : '--';
   const timeStr = currentDate ? currentDate.toLocaleTimeString() : '--';
+  
+  const now = new Date();
+  const isRealTime = Math.abs(currentDate.getTime() - now.getTime()) < 5000; // Within 5 seconds
 
   return (
     <div className="flex flex-col gap-4 text-cyan-400 font-mono text-xs p-4 bg-black/60 rounded-xl border border-cyan-900/30 backdrop-blur-md">
@@ -29,18 +43,96 @@ export function TelemetryDeck({ data, currentDate, setDate }: any) {
       </div>
 
       {/* Time Controls */}
-      <div className="flex items-center justify-between border-t border-white/10 pt-3">
+      <div className="flex items-center justify-between border-t border-white/10 pt-3 gap-4">
+        {/* Date/Time Display */}
         <div className="flex items-center gap-3">
           <Calendar className="w-4 h-4 text-gray-400" />
           <div>
              <div className="text-white font-bold leading-none">{dateStr}</div>
              <div className="text-[10px] text-gray-500 leading-none mt-1">{timeStr}</div>
+             {!isRealTime && <div className="text-[9px] text-orange-400 mt-1">TIME TRAVEL MODE</div>}
           </div>
         </div>
-        <div className="flex gap-2 text-cyan-300">
-           <Rewind className="w-4 h-4 cursor-pointer hover:text-white" />
-           <Pause className="w-4 h-4 cursor-pointer hover:text-white" />
-           <FastForward className="w-4 h-4 cursor-pointer hover:text-white" />
+        
+        {/* Playback Controls */}
+        <div className="flex gap-2 items-center">
+          {/* Jump Back 24h */}
+          <SkipBack 
+            className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
+            onClick={() => onSkipDays(-1)}
+            title="Jump back 24 hours"
+          />
+          
+          {/* Rewind 1h */}
+          <Rewind 
+            className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
+            onClick={() => onSkipHours(-1)}
+            title="Rewind 1 hour"
+          />
+          
+          {/* Play/Pause */}
+          {isPlaying ? (
+            <Pause 
+              className="w-5 h-5 cursor-pointer hover:text-white transition-colors text-cyan-400" 
+              onClick={() => setIsPlaying(false)}
+              title="Pause simulation"
+            />
+          ) : (
+            <Play 
+              className="w-5 h-5 cursor-pointer hover:text-white transition-colors text-green-400" 
+              onClick={() => setIsPlaying(true)}
+              title="Resume simulation"
+            />
+          )}
+          
+          {/* Fast Forward 1h */}
+          <FastForward 
+            className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
+            onClick={() => onSkipHours(1)}
+            title="Fast forward 1 hour"
+          />
+          
+          {/* Jump Forward 24h */}
+          <SkipForward 
+            className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
+            onClick={() => onSkipDays(1)}
+            title="Jump forward 24 hours"
+          />
+          
+          {/* Divider */}
+          <div className="w-px h-4 bg-white/20 mx-1" />
+          
+          {/* Jump to Now */}
+          <button 
+            className={`text-[10px] px-2 py-1 rounded transition-colors ${
+              isRealTime 
+                ? 'bg-green-900/50 text-green-400 cursor-default' 
+                : 'bg-cyan-900/50 text-cyan-400 hover:bg-cyan-800 cursor-pointer'
+            }`}
+            onClick={onJumpToNow}
+            disabled={isRealTime}
+            title="Jump to current time"
+          >
+            {isRealTime ? '● LIVE' : 'NOW'}
+          </button>
+          
+          {/* Speed Indicator */}
+          <div className="text-[10px] text-gray-500">
+            {playbackSpeed === 0 ? 'PAUSED' : `${playbackSpeed}x`}
+          </div>
+        </div>
+      </div>
+      
+      {/* Date/Time Picker */}
+      <div className="border-t border-white/10 pt-3">
+        <div className="flex gap-2 items-center">
+          <label className="text-[10px] text-gray-400">JUMP TO:</label>
+          <input 
+            type="datetime-local"
+            value={currentDate.toISOString().slice(0, 16)}
+            onChange={(e) => setDate(new Date(e.target.value))}
+            className="bg-black/50 border border-cyan-900/50 rounded px-2 py-1 text-[10px] text-cyan-400 font-mono focus:outline-none focus:border-cyan-500"
+          />
         </div>
       </div>
     </div>
