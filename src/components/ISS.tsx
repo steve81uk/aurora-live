@@ -6,10 +6,11 @@ import * as THREE from 'three';
 interface ISSProps {
   onBodyFocus: (name: string | null) => void;
   focusedBody: string | null;
-  earthPosition: THREE.Vector3; // Earth's current position in the scene
+  earthPosition: THREE.Vector3;
+  onVehicleBoard?: (vehicle: string) => void;
 }
 
-export default function ISS({ onBodyFocus, focusedBody, earthPosition }: ISSProps) {
+export default function ISS({ onBodyFocus, focusedBody, earthPosition, onVehicleBoard }: ISSProps) {
   const issRef = useRef<THREE.Group>(null);
   const [issPosition, setIssPosition] = useState({ lat: 0, lon: 0, alt: 420 }); // Default orbit
   const [hovered, setHovered] = useState(false);
@@ -133,6 +134,17 @@ export default function ISS({ onBodyFocus, focusedBody, earthPosition }: ISSProp
       {focusedBody === 'ISS' && (
         <Html position={[0.2, 0, 0]} center>
           <div className="flex flex-col gap-2">
+            {onVehicleBoard && (
+              <button
+                className="pointer-events-auto px-4 py-2 bg-cyan-600 hover:bg-cyan-500 border-2 border-cyan-400 rounded-lg text-white font-bold text-sm transition-all hover:scale-110 shadow-[0_0_15px_cyan] flex items-center gap-2 animate-pulse"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onVehicleBoard('ISS');
+                }}
+              >
+                🚀 BOARD ISS
+              </button>
+            )}
             <button
               className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded border border-blue-400 shadow-[0_0_20px_blue] transition-all text-sm"
               onClick={(e) => {
