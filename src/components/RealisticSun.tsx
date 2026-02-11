@@ -2,117 +2,56 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-export default function RealisticSun() {
-  const sunRef = useRef<THREE.Group>(null);
-  const coronaRef = useRef<THREE.Mesh>(null);
+export function RealisticSun({ onBodyFocus }: any) {
+  const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
-    const time = clock.getElapsedTime();
-    
-    // Rotate sun slowly
-    if (sunRef.current) {
-      sunRef.current.rotation.y += 0.0002;
-    }
-    
-    // Pulsing corona effect (subtle solar activity)
-    if (coronaRef.current) {
-      const pulse = Math.sin(time * 0.5) * 0.05 + 1;
-      coronaRef.current.scale.setScalar(pulse);
-      const material = coronaRef.current.material as THREE.MeshBasicMaterial;
-      material.opacity = 0.3 + Math.sin(time * 0.3) * 0.1;
-    }
-    
-    // Outer glow pulsing
+    const t = clock.getElapsedTime();
     if (glowRef.current) {
-      const glowPulse = Math.sin(time * 0.3) * 0.03 + 1;
-      glowRef.current.scale.setScalar(glowPulse);
+      // Pulse effect
+      const scale = 1.2 + Math.sin(t * 2) * 0.05;
+      glowRef.current.scale.set(scale, scale, scale);
+      // Rotate slowly
+      glowRef.current.rotation.z -= 0.002;
     }
   });
 
   return (
-    <group ref={sunRef} position={[0, 0, 0]}>
-      {/* Core Sun Body - Bright yellow-orange */}
-      <mesh castShadow>
+    <group ref={groupRef} onClick={(e) => { e.stopPropagation(); onBodyFocus('Sun'); }}>
+      {/* 1. CORE STAR (Bright White-Yellow Center) */}
+      <mesh>
         <sphereGeometry args={[5, 64, 64]} />
+        <meshBasicMaterial color="#FFD700" toneMapped={false} />
+      </mesh>
+
+      {/* 2. INNER CORONA (Orange Glow) */}
+      <mesh>
+        <sphereGeometry args={[5.2, 64, 64]} />
         <meshBasicMaterial 
-          color="#FFAA00"
-          toneMapped={false}
+          color="#FF8C00" 
+          transparent 
+          opacity={0.4} 
+          side={THREE.BackSide} 
+          blending={THREE.AdditiveBlending} 
         />
       </mesh>
 
-      {/* Inner Corona Layer - Orange glow */}
-      <mesh ref={coronaRef} scale={1.15}>
+      {/* 3. OUTER ATMOSPHERE (Pulsing Red-Orange Halo) */}
+      <mesh ref={glowRef}>
         <sphereGeometry args={[5, 32, 32]} />
-        <meshBasicMaterial
-          color="#FF8C00"
-          transparent
-          opacity={0.4}
-          blending={THREE.AdditiveBlending}
-          side={THREE.BackSide}
-          depthWrite={false}
+        <meshBasicMaterial 
+          color="#FF4500" 
+          transparent 
+          opacity={0.2} 
+          side={THREE.BackSide} 
+          blending={THREE.AdditiveBlending} 
         />
       </mesh>
 
-      {/* Middle Glow Layer - Deep orange */}
-      <mesh scale={1.35}>
-        <sphereGeometry args={[5, 32, 32]} />
-        <meshBasicMaterial
-          color="#FF6600"
-          transparent
-          opacity={0.25}
-          blending={THREE.AdditiveBlending}
-          side={THREE.BackSide}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {/* Outer Glow Layer - Orange-red */}
-      <mesh ref={glowRef} scale={1.6}>
-        <sphereGeometry args={[5, 32, 32]} />
-        <meshBasicMaterial
-          color="#FF4500"
-          transparent
-          opacity={0.15}
-          blending={THREE.AdditiveBlending}
-          side={THREE.BackSide}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {/* Extreme Outer Glow - Reddish fade */}
-      <mesh scale={2.0}>
-        <sphereGeometry args={[5, 32, 32]} />
-        <meshBasicMaterial
-          color="#FF2200"
-          transparent
-          opacity={0.08}
-          blending={THREE.AdditiveBlending}
-          side={THREE.BackSide}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {/* Point Light for illumination */}
-      <pointLight
-        intensity={2.5}
-        decay={0}
-        color="#FDB813"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-      />
-
-      {/* Lens Flare effect (bright center bloom) */}
-      <sprite scale={[15, 15, 1]} position={[0, 0, 0]}>
-        <spriteMaterial
-          color="#FFFF88"
-          transparent
-          opacity={0.3}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </sprite>
+      {/* 4. LIGHT SOURCE */}
+      <pointLight intensity={2.5} distance={10000} decay={0} color="#FFFACD" />
+      <ambientLight intensity={0.1} />
     </group>
   );
 }
