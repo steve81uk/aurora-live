@@ -6,9 +6,10 @@ import * as THREE from 'three';
 interface ISSProps {
   onBodyFocus: (name: string | null) => void;
   focusedBody: string | null;
+  earthPosition: THREE.Vector3; // Earth's current position in the scene
 }
 
-export default function ISS({ onBodyFocus, focusedBody }: ISSProps) {
+export default function ISS({ onBodyFocus, focusedBody, earthPosition }: ISSProps) {
   const issRef = useRef<THREE.Group>(null);
   const [issPosition, setIssPosition] = useState({ lat: 0, lon: 0, alt: 420 }); // Default orbit
   const [hovered, setHovered] = useState(false);
@@ -54,8 +55,9 @@ export default function ISS({ onBodyFocus, focusedBody }: ISSProps) {
   useFrame(() => {
     if (issRef.current) {
       const pos = latLonToVector3(issPosition.lat, issPosition.lon, issPosition.alt);
-      issRef.current.position.copy(pos);
-      issRef.current.lookAt(0, 0, 0); // Always face Earth
+      // Position relative to Earth
+      issRef.current.position.copy(earthPosition).add(pos);
+      issRef.current.lookAt(earthPosition); // Always face Earth center
       issRef.current.rotation.z += 0.01; // Slow rotation for visual effect
     }
   });
