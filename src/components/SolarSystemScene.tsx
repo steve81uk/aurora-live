@@ -37,7 +37,7 @@ function latLonToVector3(lat: number, lon: number, radius: number) {
 
 // --- SUB-COMPONENTS ---
 
-function ParkerSolarProbe({ onBodyFocus }: { onBodyFocus: (name: string) => void }) {
+function ParkerSolarProbe({ onBodyFocus, focusedBody, onVehicleBoard }: { onBodyFocus: (name: string) => void, focusedBody: string | null, onVehicleBoard: (vehicle: string) => void }) {
   const probeRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   
@@ -78,9 +78,24 @@ function ParkerSolarProbe({ onBodyFocus }: { onBodyFocus: (name: string) => void
       <Html distanceFactor={15} position={[0, 1, 0]} style={{ pointerEvents: 'none' }}>
         <div className={`text-[8px] font-mono whitespace-nowrap ${hovered ? 'text-white' : 'text-yellow-500'}`}>
           PARKER PROBE
-          {hovered && <div className="text-[7px] text-cyan-400">CLICK TO FOCUS</div>}
+          {hovered && !focusedBody && <div className="text-[7px] text-cyan-400">CLICK TO FOCUS</div>}
         </div>
       </Html>
+      
+      {/* BOARD BUTTON when focused */}
+      {focusedBody === 'Parker Solar Probe' && (
+        <Html position={[0, -1.5, 0]} center>
+          <button
+            className="pointer-events-auto px-3 py-2 bg-orange-600 hover:bg-orange-500 border-2 border-orange-400 rounded-lg text-white font-bold text-xs transition-all hover:scale-110 shadow-[0_0_15px_orange] flex items-center gap-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onVehicleBoard('Parker Solar Probe');
+            }}
+          >
+            🚀 BOARD PROBE
+          </button>
+        </Html>
+      )}
     </group>
   );
 }
@@ -227,7 +242,7 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
     </group>
     
     {/* ISS - Orbits Earth */}
-    <ISS onBodyFocus={onBodyFocus} focusedBody={focusedBody} earthPosition={earthPosition} />
+    <ISS onBodyFocus={onBodyFocus} focusedBody={focusedBody} earthPosition={earthPosition} onVehicleBoard={onVehicleBoard} />
   </>
   );
 }
@@ -395,29 +410,16 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
           </div>
         </Html>
       )}
-                  {funFact && (
-                    <div className="text-[8px] text-purple-300 italic mt-1 text-center">
-                      {funFact}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            <div className="text-[9px] text-center mt-2 text-cyan-500 animate-pulse">CLICK TO FOCUS</div>
-          </div>
-        </Html>
-      )}
     </group>
   );
 }
 
-export default function SolarSystemScene({ kpValue, currentDate = new Date(), focusedBody, focusedBodyPosition, onBodyFocus, controlsRef, onLocationClick }: any) {
+export default function SolarSystemScene({ kpValue, currentDate = new Date(), focusedBody, focusedBodyPosition, onBodyFocus, controlsRef, onLocationClick, onVehicleBoard }: any) {
   return (
     <>
       <RealisticSun onBodyFocus={onBodyFocus} />
-      <ParkerSolarProbe onBodyFocus={onBodyFocus} />
-      <UFO onBodyFocus={onBodyFocus} focusedBody={focusedBody} currentDate={currentDate} />
+      <ParkerSolarProbe onBodyFocus={onBodyFocus} focusedBody={focusedBody} onVehicleBoard={onVehicleBoard} />
+      <UFO onBodyFocus={onBodyFocus} focusedBody={focusedBody} currentDate={currentDate} onVehicleBoard={onVehicleBoard} />
 
       {PLANETS.map(planet => (
         <group key={planet.name}>

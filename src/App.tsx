@@ -15,6 +15,8 @@ import { TelemetryDeck } from './components/TelemetryDeck';
 import { SkyViewer } from './components/SkyViewer';
 import { HUDOverlay } from './components/HUDOverlay';
 import LoadingScreen from './components/LoadingScreen';
+import KeyboardHelp from './components/KeyboardHelp';
+import { ShootingStars } from './components/ShootingStars';
 
 function Loader() {
   return <Html center><div className="text-cyan-500 font-mono animate-pulse">INITIALIZING SYSTEM...</div></Html>;
@@ -28,6 +30,7 @@ export default function App() {
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
   const [focusedBodyPosition, setFocusedBodyPosition] = useState<THREE.Vector3 | null>(null);
   const [viewingLocation, setViewingLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
+  const [boardedVehicle, setBoardedVehicle] = useState<string | null>(null); // NEW: Track boarded spacecraft
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   
@@ -115,6 +118,7 @@ export default function App() {
           {/* 1. Background (Independent Suspense) */}
           <Suspense fallback={null}>
              <UniverseBackground />
+             <ShootingStars />
           </Suspense>
 
           {/* 2. Solar System (Independent Suspense) */}
@@ -126,6 +130,7 @@ export default function App() {
                 focusedBodyPosition={focusedBodyPosition}
                 onBodyFocus={setFocusedBody}
                 onLocationClick={setViewingLocation}
+                onVehicleBoard={setBoardedVehicle}
                 controlsRef={controlsRef}
              />
           </Suspense>
@@ -177,6 +182,20 @@ export default function App() {
           />
         </div>
       )}
+      
+      {/* VEHICLE VIEW (ISS, Parker, UFO) */}
+      {boardedVehicle && (
+        <VehicleView 
+          vehicle={boardedVehicle as any}
+          onExit={() => {
+            setBoardedVehicle(null);
+            setFocusedBody(null); // Return to free camera
+          }}
+        />
+      )}
+      
+      {/* Keyboard Help */}
+      <KeyboardHelp />
       
       {/* LAYER 3: Loading Screen */}
       <LoadingScreen isLoading={isLoading} progress={loadingProgress} />

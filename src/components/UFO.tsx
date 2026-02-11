@@ -10,13 +10,14 @@ interface UFOProps {
   onBodyFocus: (name: string) => void;
   focusedBody: string | null;
   currentDate: Date;
+  onVehicleBoard?: (vehicle: string) => void;
 }
 
 /**
  * Secret UFO hidden behind Mercury
  * Always stays on opposite side from Earth's perspective
  */
-export default function UFO({ onBodyFocus, focusedBody, currentDate }: UFOProps) {
+export default function UFO({ onBodyFocus, focusedBody, currentDate, onVehicleBoard }: UFOProps) {
   const ufoRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const [discovered, setDiscovered] = useState(false);
@@ -127,6 +128,21 @@ export default function UFO({ onBodyFocus, focusedBody, currentDate }: UFOProps)
           <div className="text-2xl animate-bounce">
             🛸
           </div>
+        </Html>
+      )}
+      
+      {/* BOARD BUTTON when focused */}
+      {focusedBody === 'UFO' && discovered && onVehicleBoard && (
+        <Html position={[0, -0.5, 0]} center>
+          <button
+            className="pointer-events-auto px-3 py-2 bg-green-600 hover:bg-green-500 border-2 border-green-400 rounded-lg text-white font-bold text-xs transition-all hover:scale-110 shadow-[0_0_15px_lime] flex items-center gap-1 animate-pulse"
+            onClick={(e) => {
+              e.stopPropagation();
+              onVehicleBoard('UFO');
+            }}
+          >
+            👽 BOARD UFO
+          </button>
         </Html>
       )}
     </group>
