@@ -7,24 +7,20 @@ import { TextureLoader } from 'three';
 import { RealisticSun } from './RealisticSun';
 import ISS from './ISS';
 import UFO from './UFO';
+import Hubble from './Hubble';
+import JWST from './JWST';
+import Tiangong from './Tiangong';
+import Voyager1 from './Voyager1';
+import TeslaRoadster from './TeslaRoadster';
+import AuroraBorealis from './AuroraBorealis';
+import Magnetosphere from './Magnetosphere';
+import AsteroidBelt from './AsteroidBelt';
+import { EarthAtmosphere, MarsAtmosphere, VenusAtmosphere, JupiterAtmosphere } from './AtmosphereShader';
 import { calculateDistance, formatDistance, calculateLightTravelTime, calculateProbeTravelTime, getDistanceFunFact } from '../utils/distance';
-import { CITIES } from '../constants/cities';
+import { CITIES, PLANETS } from '../data/celestial';
 
 // --- CONFIGURATION ---
 const AU_TO_SCREEN_UNITS = 40;
-
-// Export PLANETS for external use
-export const PLANETS = [
-  { name: 'Mercury', body: Astronomy.Body.Mercury, radius: 0.4, color: '#A5A5A5', texture: 'textures/2k_mercury.jpg', type: 'Rocky', temp: '430°C', distance: '0.39 AU' },
-  { name: 'Venus', body: Astronomy.Body.Venus, radius: 0.9, color: '#E3BB76', texture: 'textures/2k_venus_surface.jpg', type: 'Rocky', temp: '462°C', distance: '0.72 AU' },
-  { name: 'Earth', body: Astronomy.Body.Earth, radius: 1.0, color: '#2233FF', texture: 'textures/8k_earth_daymap.jpg', type: 'Habitable', temp: '15°C', distance: '1.00 AU' },
-  { name: 'Mars', body: Astronomy.Body.Mars, radius: 0.5, color: '#E27B58', texture: 'textures/2k_mars.jpg', type: 'Rocky', temp: '-63°C', distance: '1.52 AU' },
-  { name: 'Jupiter', body: Astronomy.Body.Jupiter, radius: 4.0, color: '#C88B3A', texture: 'textures/2k_jupiter.jpg', type: 'Gas Giant', temp: '-108°C', distance: '5.20 AU' },
-  { name: 'Saturn', body: Astronomy.Body.Saturn, radius: 3.5, color: '#C5AB6E', texture: 'textures/2k_saturn.jpg', type: 'Gas Giant', temp: '-139°C', distance: '9.58 AU' },
-  { name: 'Uranus', body: Astronomy.Body.Uranus, radius: 2.0, color: '#4FD0E7', texture: 'textures/2k_uranus.jpg', type: 'Ice Giant', temp: '-197°C', distance: '19.22 AU' },
-  { name: 'Neptune', body: Astronomy.Body.Neptune, radius: 2.0, color: '#4169E1', texture: 'textures/2k_neptune.jpg', type: 'Ice Giant', temp: '-201°C', distance: '30.05 AU' },
-  { name: 'Pluto', body: Astronomy.Body.Pluto, radius: 0.2, color: '#968570', texture: 'textures/2k_mercury.jpg', type: 'Dwarf', temp: '-232°C', distance: '39.48 AU' } 
-];
 
 function latLonToVector3(lat: number, lon: number, radius: number) {
   const phi = (90 - lat) * (Math.PI / 180);
@@ -113,8 +109,9 @@ function OrbitTrail({ body, color }: any) {
   }, [body]);
 
   return (
-    <line geometry={points}>
-      <lineBasicMaterial color={color || 'white'} opacity={0.15} transparent />
+    <line>
+      <bufferGeometry attach="geometry" {...points} />
+      <lineBasicMaterial attach="material" color={color || 'white'} opacity={0.15} transparent />
     </line>
   );
 }
@@ -122,68 +119,53 @@ function OrbitTrail({ body, color }: any) {
 // ... MoonSystem & OrbitingMoon (Keep same as before, omitted for brevity but include in file) ...
 // (I will assume you have the MoonSystem code from previous step, if not I can paste it)
 
-function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus, focusedBody }: any) {
+function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus, focusedBody, onVehicleBoard }: any) {
   const groupRef = useRef<THREE.Group>(null);
   const earthMeshRef = useRef<THREE.Mesh>(null);
   const cloudsRef = useRef<THREE.Mesh>(null);
   const [earthPosition, setEarthPosition] = useState(new THREE.Vector3());
   
   const [day, night, clouds] = useLoader(TextureLoader, [
-    'textures/8k_earth_daymap.jpg',
-    'textures/8k_earth_nightmap.jpg',
-    'textures/8k_earth_clouds.jpg'
+    '/textures/8k_earth_daymap.jpg',  // Leading slash for absolute path
+    '/textures/8k_earth_nightmap.jpg',
+    '/textures/8k_earth_clouds.jpg'
   ]);
+
+  // Memoize heavy calculations
+  const earthPositionData = useMemo(() => {
+    const astroTime = Astronomy.MakeTime(currentDate);
+    const helio = Astronomy.HelioVector(config.body, astroTime);
+    const pos = new THREE.Vector3(
+      helio.x * AU_TO_SCREEN_UNITS,
+      helio.y * AU_TO_SCREEN_UNITS,
+      helio.z * AU_TO_SCREEN_UNITS
+    );
+    
+    const utcHours = currentDate.getUTCHours();
+    const utcMinutes = currentDate.getUTCMinutes();
+    const utcSeconds = currentDate.getUTCSeconds();
+    const utcTimeInHours = utcHours + utcMinutes / 60 + utcSeconds / 3600;
+    const hoursFromNoon = utcTimeInHours - 12;
+    const rotationDegrees = hoursFromNoon * 15;
+    const orbitalAngle = Math.atan2(pos.z, pos.x);
+    const finalRotation = (-orbitalAngle) + (rotationDegrees * Math.PI / 180);
+    
+    return { pos, finalRotation };
+  }, [currentDate, config.body]);
 
   useFrame(() => {
     if (groupRef.current) {
-      const astroTime = Astronomy.MakeTime(currentDate);
-      const helio = Astronomy.HelioVector(config.body, astroTime);
-      const pos = new THREE.Vector3(
-        helio.x * AU_TO_SCREEN_UNITS,
-        helio.y * AU_TO_SCREEN_UNITS,
-        helio.z * AU_TO_SCREEN_UNITS
-      );
-      groupRef.current.position.copy(pos);
-      setEarthPosition(pos);
+      groupRef.current.position.copy(earthPositionData.pos);
+      setEarthPosition(earthPositionData.pos);
     }
     
-    // ACCURATE EARTH ROTATION based on real time
-    if (earthMeshRef.current && groupRef.current) {
-      // Calculate rotation to ensure correct day/night at current UTC time
-      // The Sun is at origin [0,0,0], Earth orbits around it
-      
-      // Get Earth's current position relative to Sun
-      const earthToSun = new THREE.Vector3(0, 0, 0).sub(groupRef.current.position).normalize();
-      
-      // Calculate the angle Earth needs to rotate so that noon (12:00 UTC) at Greenwich (0° lon) faces the Sun
-      // At UTC noon, Greenwich should face the Sun
-      const utcHours = currentDate.getUTCHours();
-      const utcMinutes = currentDate.getUTCMinutes();
-      const utcSeconds = currentDate.getUTCSeconds();
-      const utcTimeInHours = utcHours + utcMinutes / 60 + utcSeconds / 3600;
-      
-      // Hours from noon (when Greenwich should face Sun)
-      const hoursFromNoon = utcTimeInHours - 12;
-      
-      // Earth rotates 360° in 24 hours = 15° per hour
-      const rotationDegrees = hoursFromNoon * 15;
-      
-      // Also need to account for Earth's orbital position
-      // Calculate angle from Sun to Earth in XZ plane
-      const earthPos = groupRef.current.position;
-      const orbitalAngle = Math.atan2(earthPos.z, earthPos.x);
-      
-      // Combine rotation: base rotation + orbital position adjustment
-      // The texture is oriented with Greenwich at 0° longitude facing +X initially
-      // We need to rotate so Greenwich faces the Sun at noon UTC
-      const finalRotation = (-orbitalAngle) + (rotationDegrees * Math.PI / 180);
-      
-      earthMeshRef.current.rotation.y = finalRotation;
-      
-      // Clouds rotate slightly faster (wind effect) but stay synchronized
-      if (cloudsRef.current) {
-        cloudsRef.current.rotation.y = finalRotation + 0.1; // Slight offset for atmosphere drift
-      }
+    // Apply rotation
+    if (earthMeshRef.current) {
+      earthMeshRef.current.rotation.y = earthPositionData.finalRotation;
+    }
+    
+    if (cloudsRef.current) {
+      cloudsRef.current.rotation.y = earthPositionData.finalRotation + 0.1;
     }
   });
 
@@ -200,21 +182,30 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
       </mesh>
 
       <mesh ref={earthMeshRef} castShadow receiveShadow>
-        <sphereGeometry args={[config.radius, 64, 64]} />
+        <sphereGeometry args={[config.radius, 48, 48]} />
         <meshStandardMaterial map={day} emissiveMap={night} emissiveIntensity={0.5} transparent={false} />
       </mesh>
 
       <mesh ref={cloudsRef} scale={[1.01, 1.01, 1.01]} raycast={() => null}>
-        <sphereGeometry args={[config.radius, 64, 64]} />
+        <sphereGeometry args={[config.radius, 32, 32]} />
         <meshStandardMaterial map={clouds} transparent opacity={0.4} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
 
+      {/* AURORA GLOW SPHERE (Dynamic based on Kp) */}
       <mesh scale={[1.15, 1.15, 1.15]} raycast={() => null}>
         <sphereGeometry args={[config.radius, 64, 64]} />
-        <meshBasicMaterial color={kpValue > 5 ? "#ff0044" : "#4ade80"} transparent opacity={0.15} side={THREE.BackSide} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial 
+          color={kpValue > 5 ? '#ff2255' : '#4ade80'}
+          transparent 
+          opacity={Math.min(kpValue * 0.05, 0.4)}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
       </mesh>
 
-      {CITIES.map((city) => {
+      {/* CITY MARKERS (only render when zoomed in for performance) */}
+      {focusedBody === 'Earth' && CITIES.slice(0, 50).map((city) => {
         const pos = latLonToVector3(city.lat, city.lon, config.radius * 1.02);
         return (
           <group key={city.name} position={pos}>
@@ -228,7 +219,7 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
                 document.body.style.cursor = 'auto';
               }}
             >
-              <sphereGeometry args={[0.03, 16, 16]} />
+              <sphereGeometry args={[0.03, 8, 8]} />
               <meshBasicMaterial color={city.color} toneMapped={false} />
             </mesh>
           </group>
@@ -241,8 +232,26 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
       </group> {/* Close axial tilt group */}
     </group>
     
-    {/* ISS - Orbits Earth */}
+    {/* AURORA & MAGNETOSPHERE (only when Earth focused for performance) */}
+    {focusedBody === 'Earth' && (
+      <>
+        <AuroraBorealis kpValue={kpValue} earthPosition={earthPosition} intensity={1.0} />
+        <Magnetosphere earthPosition={earthPosition} solarWindSpeed={500} sunPosition={new THREE.Vector3(0, 0, 0)} />
+      </>
+    )}
+    
+    {/* ASTEROID BELT & KUIPER BELT */}
+    <AsteroidBelt visible={true} />
+    
+    {/* SPACE STATIONS & TELESCOPES */}
     <ISS onBodyFocus={onBodyFocus} focusedBody={focusedBody} earthPosition={earthPosition} onVehicleBoard={onVehicleBoard} />
+    <Hubble onBodyFocus={onBodyFocus} focusedBody={focusedBody} earthPosition={earthPosition} onVehicleBoard={onVehicleBoard} />
+    <Tiangong onBodyFocus={onBodyFocus} focusedBody={focusedBody} earthPosition={earthPosition} onVehicleBoard={onVehicleBoard} />
+    <JWST onBodyFocus={onBodyFocus} focusedBody={focusedBody} currentDate={currentDate} onVehicleBoard={onVehicleBoard} />
+    
+    {/* INTERSTELLAR & MISC */}
+    <Voyager1 onBodyFocus={onBodyFocus} focusedBody={focusedBody} />
+    <TeslaRoadster onBodyFocus={onBodyFocus} focusedBody={focusedBody} currentDate={currentDate} />
   </>
   );
 }
@@ -252,15 +261,26 @@ function Moon({ currentDate, onBodyFocus }: { currentDate: Date, onBodyFocus: (n
   const moonRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   
+  // Calculate real Moon position using astronomy-engine
+  const moonPosition = useMemo(() => {
+    const astroTime = Astronomy.MakeTime(currentDate);
+    // GeoVector gives Moon position relative to Earth center in kilometers
+    const geoVec = Astronomy.GeoVector(Astronomy.Body.Moon, astroTime, true);
+    
+    // Scale down from km to scene units
+    // Moon orbit radius is ~384,400 km, Earth radius in scene ~6,371 km
+    const scale = 6; // Visual scale for scene (compressed for visibility)
+    
+    return new THREE.Vector3(
+      geoVec.x / 64000 * scale,  // Convert km to scene units
+      geoVec.y / 64000 * scale,
+      geoVec.z / 64000 * scale
+    );
+  }, [currentDate]);
+  
   useFrame(() => {
     if (moonRef.current) {
-      // Simplified lunar orbit (visual approximation)
-      const t = currentDate.getTime() * 0.0001;
-      moonRef.current.position.set(
-        Math.cos(t) * 6,
-        0,
-        Math.sin(t) * 6
-      );
+      moonRef.current.position.copy(moonPosition);
     }
   });
 
@@ -278,8 +298,8 @@ function Moon({ currentDate, onBodyFocus }: { currentDate: Date, onBodyFocus: (n
       
       {/* Moon surface */}
       <mesh castShadow receiveShadow>
-        <sphereGeometry args={[0.27, 32, 32]} />
-        <meshStandardMaterial map={useLoader(TextureLoader, 'textures/2k_moon.jpg')} roughness={0.9} />
+        <sphereGeometry args={[0.27, 24, 24]} />
+        <meshStandardMaterial map={useLoader(TextureLoader, '/textures/2k_moon.jpg')} roughness={0.9} />
       </mesh>
       
       {/* Label */}
@@ -297,7 +317,7 @@ function Moon({ currentDate, onBodyFocus }: { currentDate: Date, onBodyFocus: (n
 
 function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition, onBodyFocus }: any) {
   const groupRef = useRef<THREE.Group>(null);
-  const texture = useLoader(TextureLoader, config.texture || 'textures/2k_mercury.jpg');
+  const texture = useLoader(TextureLoader, config.texture ? `/${config.texture}` : '/textures/2k_mercury.jpg');
   const [hovered, setHovered] = useState(false);
   const [currentPosition, setCurrentPosition] = useState<THREE.Vector3>(new THREE.Vector3());
   
@@ -337,14 +357,20 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
         onPointerOver={() => { document.body.style.cursor = 'pointer'; setHovered(true); }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; setHovered(false); }}
       >
-         <sphereGeometry args={[config.radius * 1.2, 32, 32]} />
+         <sphereGeometry args={[config.radius * 1.2, 16, 16]} />
          <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
       <mesh castShadow receiveShadow>
-        <sphereGeometry args={[config.radius, 32, 32]} />
+        <sphereGeometry args={[config.radius, 24, 24]} />
         <meshStandardMaterial map={texture} />
       </mesh>
+      
+      {/* ATMOSPHERIC GLOW */}
+      {config.name === 'Earth' && <EarthAtmosphere planetRadius={config.radius} />}
+      {config.name === 'Mars' && <MarsAtmosphere planetRadius={config.radius} />}
+      {config.name === 'Venus' && <VenusAtmosphere planetRadius={config.radius} />}
+      {config.name === 'Jupiter' && <JupiterAtmosphere planetRadius={config.radius} />}
       
       {/* Saturn Rings */}
       {config.name === 'Saturn' && ringTexture && (
@@ -417,7 +443,7 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
 export default function SolarSystemScene({ kpValue, currentDate = new Date(), focusedBody, focusedBodyPosition, onBodyFocus, controlsRef, onLocationClick, onVehicleBoard }: any) {
   return (
     <>
-      <RealisticSun onBodyFocus={onBodyFocus} />
+      <RealisticSun onBodyFocus={onBodyFocus} kpValue={kpValue} />
       <ParkerSolarProbe onBodyFocus={onBodyFocus} focusedBody={focusedBody} onVehicleBoard={onVehicleBoard} />
       <UFO onBodyFocus={onBodyFocus} focusedBody={focusedBody} currentDate={currentDate} onVehicleBoard={onVehicleBoard} />
 
@@ -433,6 +459,7 @@ export default function SolarSystemScene({ kpValue, currentDate = new Date(), fo
                onLocationClick={onLocationClick} 
                onBodyFocus={onBodyFocus}
                focusedBody={focusedBody}
+               onVehicleBoard={onVehicleBoard}
             />
           ) : (
             <TexturedPlanet 

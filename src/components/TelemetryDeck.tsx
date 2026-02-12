@@ -60,14 +60,12 @@ export function TelemetryDeck({
           <SkipBack 
             className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
             onClick={() => onSkipDays(-1)}
-            title="Jump back 24 hours"
           />
           
           {/* Rewind 1h */}
           <Rewind 
             className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
             onClick={() => onSkipHours(-1)}
-            title="Rewind 1 hour"
           />
           
           {/* Play/Pause */}
@@ -75,13 +73,11 @@ export function TelemetryDeck({
             <Pause 
               className="w-5 h-5 cursor-pointer hover:text-white transition-colors text-cyan-400" 
               onClick={() => setIsPlaying(false)}
-              title="Pause simulation"
             />
           ) : (
             <Play 
               className="w-5 h-5 cursor-pointer hover:text-white transition-colors text-green-400" 
               onClick={() => setIsPlaying(true)}
-              title="Resume simulation"
             />
           )}
           
@@ -89,14 +85,12 @@ export function TelemetryDeck({
           <FastForward 
             className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
             onClick={() => onSkipHours(1)}
-            title="Fast forward 1 hour"
           />
           
           {/* Jump Forward 24h */}
           <SkipForward 
             className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
             onClick={() => onSkipDays(1)}
-            title="Jump forward 24 hours"
           />
           
           {/* Divider */}

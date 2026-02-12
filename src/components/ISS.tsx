@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useLoader } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { TextureLoader } from 'three';
 
 interface ISSProps {
   onBodyFocus: (name: string | null) => void;
@@ -15,6 +16,9 @@ export default function ISS({ onBodyFocus, focusedBody, earthPosition, onVehicle
   const [issPosition, setIssPosition] = useState({ lat: 0, lon: 0, alt: 420 }); // Default orbit
   const [hovered, setHovered] = useState(false);
   const [velocity, setVelocity] = useState(7.66); // km/s orbital velocity
+  
+  // Load ISS sprite texture
+  const issTexture = useLoader(TextureLoader, 'https://upload.wikimedia.org/wikipedia/commons/d/d0/International_Space_Station_svg_icon.png');
 
   // Fetch real ISS position from API
   useEffect(() => {
@@ -65,8 +69,9 @@ export default function ISS({ onBodyFocus, focusedBody, earthPosition, onVehicle
 
   return (
     <group ref={issRef}>
-      {/* ISS Model (simplified) */}
-      <group
+      {/* ISS Sprite */}
+      <sprite
+        scale={[2, 2, 2]}
         onClick={(e) => {
           e.stopPropagation();
           onBodyFocus('ISS');
@@ -80,33 +85,8 @@ export default function ISS({ onBodyFocus, focusedBody, earthPosition, onVehicle
           document.body.style.cursor = 'auto';
         }}
       >
-        {/* Main Body */}
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[0.15, 0.08, 0.08]} />
-          <meshStandardMaterial color="#dddddd" metalness={0.8} roughness={0.2} />
-        </mesh>
-
-        {/* Solar Panels (Left) */}
-        <mesh position={[-0.15, 0, 0]}>
-          <boxGeometry args={[0.25, 0.15, 0.01]} />
-          <meshStandardMaterial color="#1e3a8a" emissive="#1e40af" emissiveIntensity={0.3} />
-        </mesh>
-
-        {/* Solar Panels (Right) */}
-        <mesh position={[0.15, 0, 0]}>
-          <boxGeometry args={[0.25, 0.15, 0.01]} />
-          <meshStandardMaterial color="#1e3a8a" emissive="#1e40af" emissiveIntensity={0.3} />
-        </mesh>
-
-        {/* Radiator */}
-        <mesh position={[0, 0.08, 0]}>
-          <boxGeometry args={[0.1, 0.02, 0.05]} />
-          <meshStandardMaterial color="#888888" />
-        </mesh>
-
-        {/* Point Light (Simulates reflection) */}
-        <pointLight position={[0, 0.1, 0]} intensity={0.5} distance={2} color="#ffffff" />
-      </group>
+        <spriteMaterial map={issTexture} transparent />
+      </sprite>
 
       {/* Hover Label */}
       {hovered && focusedBody !== 'ISS' && (
