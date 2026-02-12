@@ -22,8 +22,15 @@ export default function JWST({ onBodyFocus, focusedBody, currentDate, onVehicleB
   const jwstRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   
-  // Load Hubble texture as placeholder for JWST (no direct JWST PNG available)
-  const jwstTexture = useLoader(TextureLoader, 'https://pngimg.com/uploads/hubble/hubble_PNG12.png');
+  // Load JWST texture with fallback (using ISS icon as placeholder)
+  const jwstTexture = useLoader(
+    TextureLoader,
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/JWST_spacecraft_model_2.png/500px-JWST_spacecraft_model_2.png',
+    undefined,
+    (error) => {
+      console.warn('Failed to load JWST texture:', error);
+    }
+  );
 
   useFrame(() => {
     if (jwstRef.current) {

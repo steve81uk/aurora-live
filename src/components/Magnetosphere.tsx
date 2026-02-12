@@ -48,6 +48,10 @@ export default function Magnetosphere({
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
       const material = new THREE.LineBasicMaterial({
         color: '#4A9EFF',
+        opacity: 0.05, // Ghost-like effect
+        transparent: true,
+        blending: THREE.AdditiveBlending
+      });
         transparent: true,
         opacity: 0.05,
         linewidth: 1,
@@ -94,20 +98,26 @@ export default function Magnetosphere({
       ))}
       
       {/* Magnetopause boundary (compressed teardrop shape) */}
-      <mesh position={[compressionFactor * 1.5, 0, 0]} scale={[compressionFactor, 1, 1]}>
+      <mesh position={[compressionFactor * 1.5, 0, 0]} scale={[compressionFactor, 1, 1]} raycast={() => null}>
         <sphereGeometry args={[3, 32, 32, 0, Math.PI]} />
         <meshBasicMaterial 
           color="#00FFFF" 
           transparent 
           opacity={0.05} 
           side={THREE.DoubleSide}
-          wireframe
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
       
       {/* Magnetotail (elongated on night side) */}
-      <mesh position={[-5, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[-5, 0, 0]} rotation={[0, 0, Math.PI / 2]} raycast={() => null}>
         <coneGeometry args={[1.5, 8, 16]} />
+        <meshBasicMaterial 
+          color="#4A9EFF" 
+          transparent 
+          opacity={0.05}
+          blending={THREE.AdditiveBlending}
+        />
         <meshBasicMaterial 
           color="#0088FF" 
           transparent 

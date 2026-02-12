@@ -57,6 +57,12 @@ import { NotificationSystem } from './components/NotificationSystem';
 // v3.0 CINEMATIC SPLASH
 import { CinematicSplash } from './components/CinematicSplash';
 
+// v3.1 NAVIGATION SYSTEM
+import { NavigationRail } from './components/NavigationRail';
+import { OracleModule } from './components/OracleModule';
+
+type Module = 'BRIDGE' | 'ORACLE' | 'OBSERVA' | 'HANGAR' | 'CHRONOS';
+
 function Loader() {
   return <Html center><div className="text-cyan-500 font-mono animate-pulse">INITIALIZING SYSTEM...</div></Html>;
 }
@@ -80,6 +86,9 @@ function AppInner() {
   
   // NEW: Cinematic splash state
   const [showSplash, setShowSplash] = useState(true);
+  
+  // NEW: Navigation module state
+  const [activeModule, setActiveModule] = useState<Module>('BRIDGE');
   
   // Simulation Lab state
   const [simulationMode, setSimulationMode] = useState(false);
@@ -253,6 +262,36 @@ function AppInner() {
         <HelmetHUD theme={hudTheme} onThemeChange={setHudTheme}>
           <div className="relative w-screen h-screen bg-black overflow-hidden select-none">
         
+        {/* Navigation Rail (Always visible) */}
+        <NavigationRail activeModule={activeModule} setActiveModule={setActiveModule} />
+        
+        {/* MODULE RENDERING */}
+        {activeModule === 'ORACLE' ? (
+          /* THE ORACLE - 2D Metrics Dashboard */
+          <OracleModule />
+        ) : activeModule === 'OBSERVA' ? (
+          /* THE OBSERVA - Surface View */
+          surfaceMode && viewingLocation && (
+            <SurfaceView
+              location={viewingLocation}
+              auroraData={data}
+              onExit={() => {
+                setSurfaceMode(false);
+                setViewingLocation(null);
+              }}
+            />
+          )
+        ) : activeModule === 'HANGAR' ? (
+          /* THE HANGAR - Spacecraft View */
+          boardedVehicle && (
+            <VehicleView
+              vehicle={boardedVehicle}
+              onExit={() => setBoardedVehicle(null)}
+            />
+          )
+        ) : (
+          /* THE BRIDGE - Main 3D Solar System View */
+          <>
         {/* MISSION CONTROL MODE (Full screen overlay) */}
         {showMissionControl && (
           <MissionControlView
@@ -581,6 +620,10 @@ function AppInner() {
         
         {/* LAYER 3: Loading Screen */}
         <LoadingScreen isLoading={isLoading} progress={loadingProgress} />
+          </>
+        )}
+        {/* End module rendering */}
+        
       </div>
     </HelmetHUD>
       )}

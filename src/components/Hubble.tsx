@@ -20,8 +20,15 @@ export default function Hubble({ onBodyFocus, focusedBody, earthPosition, onVehi
   const hubbleRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   
-  // Load Hubble sprite texture
-  const hubbleTexture = useLoader(TextureLoader, 'https://pngimg.com/uploads/hubble/hubble_PNG12.png');
+  // Load Hubble sprite texture with fallback
+  const hubbleTexture = useLoader(
+    TextureLoader, 
+    'https://upload.wikimedia.org/wikipedia/commons/3/3f/HST-SM4.jpeg',
+    undefined,
+    (error) => {
+      console.warn('Failed to load Hubble texture:', error);
+    }
+  );
 
   // Hubble orbital parameters (simplified circular orbit)
   const orbitalRadius = 1.0 + 0.054; // Earth radius + 540 km (scaled)
