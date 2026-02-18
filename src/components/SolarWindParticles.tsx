@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Points, PointsMaterial, AdditiveBlending } from 'three';
 
 interface SolarWindParticlesProps {
   solarWindSpeed: number;
@@ -13,10 +13,10 @@ interface SolarWindParticlesProps {
  * Inspired by NASA real-time data visualization
  */
 export default function SolarWindParticles({ solarWindSpeed, kpValue }: SolarWindParticlesProps) {
-  const particlesRef = useRef<THREE.Points>(null);
-  const materialRef = useRef<THREE.PointsMaterial>(null);
+  const particlesRef = useRef<Points>(null);
+  const materialRef = useRef<PointsMaterial>(null);
 
-  // Create particle geometry
+  // Create particle geometry - RADIAL from Sun center
   const { positions, velocities } = useMemo(() => {
     const count = 5000;
     const positions = new Float32Array(count * 3);
@@ -25,19 +25,26 @@ export default function SolarWindParticles({ solarWindSpeed, kpValue }: SolarWin
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
       
-      // Spawn in a cone from Sun toward outer solar system
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 20 + 5;
-      const spread = Math.random() * 10 - 5;
+      // Spawn in spherical shell around Sun (radial distribution)
+      const theta = Math.random() * Math.PI * 2; // Azimuthal angle
+      const phi = Math.acos(2 * Math.random() - 1); // Polar angle (uniform sphere)
+      const radius = 5 + Math.random() * 30; // Distance from Sun center
       
-      positions[i3] = Math.cos(angle) * radius;
-      positions[i3 + 1] = Math.sin(angle) * radius + spread;
-      positions[i3 + 2] = spread;
+      // Convert spherical to Cartesian
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
       
-      // Velocity toward +X (outward from Sun)
-      velocities[i3] = 0.05 + Math.random() * 0.1;
-      velocities[i3 + 1] = (Math.random() - 0.5) * 0.02;
-      velocities[i3 + 2] = (Math.random() - 0.5) * 0.02;
+      positions[i3] = x;
+      positions[i3 + 1] = y;
+      positions[i3 + 2] = z;
+      
+      // Velocity RADIALLY OUTWARD from Sun (normalize direction)
+      const length = Math.sqrt(x * x + y * y + z * z);
+      const speed = 0.05 + Math.random() * 0.08;
+      velocities[i3] = (x / length) * speed;
+      velocities[i3 + 1] = (y / length) * speed;
+      velocities[i3 + 2] = (z / length) * speed;
     }
 
     return { positions, velocities };
@@ -56,23 +63,40 @@ export default function SolarWindParticles({ solarWindSpeed, kpValue }: SolarWin
       array[i + 1] += velocities[i + 1];
       array[i + 2] += velocities[i + 2];
 
-      // Reset particles that go too far
-      if (array[i] > 100) {
-        array[i] = -20;
-        array[i + 1] = (Math.random() - 0.5) * 20;
-        array[i + 2] = (Math.random() - 0.5) * 20;
+      // Reset particles that go too far (distance check from origin)
+      const distance = Math.sqrt(array[i] * array[i] + array[i + 1] * array[i + 1] + array[i + 2] * array[i + 2]);
+      if (distance > 120) {
+        // Respawn near Sun center with random spherical distribution
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const spawnRadius = 5 + Math.random() * 3;
+        
+        const x = spawnRadius * Math.sin(phi) * Math.cos(theta);
+        const y = spawnRadius * Math.sin(phi) * Math.sin(theta);
+        const z = spawnRadius * Math.cos(phi);
+        
+        array[i] = x;
+        array[i + 1] = y;
+        array[i + 2] = z;
+        
+        // Recalculate velocity (radially outward)
+        const len = Math.sqrt(x * x + y * y + z * z);
+        const speed = 0.05 + Math.random() * 0.08;
+        velocities[i] = (x / len) * speed;
+        velocities[i + 1] = (y / len) * speed;
+        velocities[i + 2] = (z / len) * speed;
       }
     }
 
     positionsAttr.needsUpdate = true;
 
     // Color transition based on solar wind speed
-    // 300-400 km/s = white (normal)
+    // 300-400 km/s = solar yellow (normal) - matches the Sun's corona
     // 400-600 km/s = yellow-orange (elevated)
     // 600-800 km/s = orange-red (high)
     // 800+ km/s = angry red (extreme)
     
-    let r = 1.0, g = 1.0, b = 1.0;
+    let r = 1.0, g = 0.75, b = 0.15; // Default: warm solar yellow
     
     if (solarWindSpeed > 800) {
       // Angry red
@@ -126,7 +150,7 @@ export default function SolarWindParticles({ solarWindSpeed, kpValue }: SolarWin
         transparent
         opacity={0.6}
         sizeAttenuation
-        blending={THREE.AdditiveBlending}
+        blending={AdditiveBlending}
         depthWrite={false}
       />
     </points>

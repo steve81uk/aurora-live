@@ -1,8 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { Html } from '@react-three/drei';
-import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
-import { TextureLoader } from 'three';
 
 interface Voyager1Props {
   onBodyFocus: (name: string) => void;
@@ -18,8 +16,28 @@ export default function Voyager1({ onBodyFocus, focusedBody }: Voyager1Props) {
   const voyagerRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   
-  // Load Voyager sprite texture
-  const voyagerTexture = useLoader(TextureLoader, 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Voyager_spacecraft_model.png/800px-Voyager_spacecraft_model.png');
+  // Create a simple canvas-based texture
+  const voyagerTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // Draw simple Voyager probe
+      ctx.fillStyle = '#C0C0C0';
+      ctx.fillRect(25, 20, 14, 24); // Main body
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(15, 30, 34, 4); // Golden record disk
+      ctx.fillStyle = '#8B7355';
+      ctx.fillRect(32, 10, 2, 10); // Antenna
+      ctx.fillStyle = '#4A9EFF';
+      ctx.fillRect(10, 32, 10, 2); // Boom
+      ctx.fillRect(44, 32, 10, 2); // Boom
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, []);
 
   // Voyager 1 is approximately 159 AU from Sun (as of 2026)
   const AU_TO_SCREEN_UNITS = 40;

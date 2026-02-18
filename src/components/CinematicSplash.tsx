@@ -1,5 +1,5 @@
 /**
- * AETHERIS - Cinematic Splash Screen
+ * SKÖLL-TRACK - Cinematic Splash Screen
  * Epic diamond ring eclipse effect with GSAP camera zoom
  */
 
@@ -194,7 +194,7 @@ export function CinematicSplash({ onComplete }: CinematicSplashProps) {
       
       {/* Title and Button Overlay */}
       <div className="relative z-10 flex flex-col items-center gap-12">
-        {/* AETHERIS Title */}
+        {/* SKÖLL-TRACK Title */}
         <div 
           ref={titleRef}
           className="text-center"
@@ -206,13 +206,13 @@ export function CinematicSplash({ onComplete }: CinematicSplashProps) {
               textShadow: '0 0 40px rgba(255,255,255,0.5), 0 0 80px rgba(255,170,0,0.3)'
             }}
           >
-            AETHERIS
+            SKÖLL-TRACK
           </h1>
           <p 
             className="text-sm tracking-[0.3em] text-gray-400 font-light"
             style={{ fontFamily: 'Rajdhani, sans-serif' }}
           >
-            AURORA • LIVE • REAL-TIME SPACE WEATHER
+            TRACK THE SUN'S FURY • REAL-TIME SPACE WEATHER
           </p>
         </div>
         

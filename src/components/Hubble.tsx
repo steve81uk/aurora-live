@@ -1,8 +1,9 @@
 import { useRef, useState, useMemo } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { TextureLoader } from 'three';
+import { useOcclusionDetection } from '../hooks/useOcclusionDetection';
+import { useSmartLabelPosition, useLabelDistanceFade } from '../hooks/useSmartLabelPosition';
 
 interface HubbleProps {
   onBodyFocus: (name: string) => void;
@@ -19,16 +20,40 @@ interface HubbleProps {
 export default function Hubble({ onBodyFocus, focusedBody, earthPosition, onVehicleBoard }: HubbleProps) {
   const hubbleRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
+  const positionRef = useRef(new THREE.Vector3());
   
-  // Load Hubble sprite texture with fallback
-  const hubbleTexture = useLoader(
-    TextureLoader, 
-    'https://upload.wikimedia.org/wikipedia/commons/3/3f/HST-SM4.jpeg',
-    undefined,
-    (error) => {
-      console.warn('Failed to load Hubble texture:', error);
+  // Occlusion detection
+  const isVisible = useOcclusionDetection(positionRef.current, [
+    { position: earthPosition, radius: 1.0 }
+  ]);
+  
+  // Smart label positioning
+  const labelOffset = useSmartLabelPosition('Hubble', positionRef.current, hovered && isVisible, 7);
+  
+  // Distance fade
+  const labelOpacity = useLabelDistanceFade(positionRef.current, 5, 50);
+  
+  // Create a simple canvas-based texture as fallback
+  const hubbleTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // Draw a simple telescope shape
+      ctx.fillStyle = '#8B7355';
+      ctx.fillRect(22, 10, 20, 44); // Main tube
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(20, 50, 24, 8); // Solar panels
+      ctx.fillStyle = '#4A9EFF';
+      ctx.beginPath();
+      ctx.arc(32, 20, 8, 0, Math.PI * 2);
+      ctx.fill(); // Lens
     }
-  );
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, []);
 
   // Hubble orbital parameters (simplified circular orbit)
   const orbitalRadius = 1.0 + 0.054; // Earth radius + 540 km (scaled)
@@ -46,6 +71,7 @@ export default function Hubble({ onBodyFocus, focusedBody, earthPosition, onVehi
       
       // Position relative to Earth
       hubbleRef.current.position.copy(earthPosition).add(new THREE.Vector3(x, y, z));
+      positionRef.current.copy(hubbleRef.current.position);
       
       // Point aperture away from Earth (always looking into space)
       hubbleRef.current.lookAt(
@@ -77,10 +103,10 @@ export default function Hubble({ onBodyFocus, focusedBody, earthPosition, onVehi
         <spriteMaterial map={hubbleTexture} transparent />
       </sprite>
 
-      {/* Hover Label */}
-      {hovered && focusedBody !== 'Hubble' && (
-        <Html position={[0, 0.15, 0]} center style={{ pointerEvents: 'none' }}>
-          <div className="bg-black/95 backdrop-blur-xl border border-purple-400 rounded-lg p-3 text-sm font-mono text-purple-300 min-w-[220px] shadow-[0_0_25px_rgba(168,85,247,0.4)]">
+      {/* Hover Label - Only if visible and not occluded */}
+      {hovered && focusedBody !== 'Hubble' && isVisible && labelOpacity > 0.1 && (
+        <Html position={labelOffset} center style={{ pointerEvents: 'none', opacity: labelOpacity }}>
+          <div className="bg-black/95 backdrop-blur-xl border border-purple-400 rounded-lg p-3 text-sm font-mono text-purple-300 min-w-[220px] shadow-[0_0_25px_rgba(168,85,247,0.4)] transition-opacity duration-300">
             <h3 className="text-xl text-white font-bold mb-2">🔭 HUBBLE SPACE TELESCOPE</h3>
             <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
               <span className="font-bold">ALTITUDE:</span>

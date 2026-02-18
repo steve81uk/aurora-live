@@ -1,10 +1,10 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Vector3, Mesh, ShaderMaterial, PlaneGeometry, DoubleSide, AdditiveBlending } from 'three';
 
 interface AuroraBorealisProps {
   kpValue: number;
-  earthPosition: THREE.Vector3;
+  earthPosition: Vector3;
   intensity?: number;
 }
 
@@ -14,12 +14,12 @@ interface AuroraBorealisProps {
  * Color and intensity driven by Kp index
  */
 export default function AuroraBorealis({ kpValue, earthPosition, intensity = 1.0 }: AuroraBorealisProps) {
-  const northAuroraRef = useRef<THREE.Mesh>(null);
-  const southAuroraRef = useRef<THREE.Mesh>(null);
+  const northAuroraRef = useRef<Mesh>(null);
+  const southAuroraRef = useRef<Mesh>(null);
 
-  // Aurora shader material
+  // Aurora shader material - memoized for performance
   const auroraMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
+    return new ShaderMaterial({
       uniforms: {
         time: { value: 0 },
         kpValue: { value: kpValue },
@@ -79,8 +79,8 @@ export default function AuroraBorealis({ kpValue, earthPosition, intensity = 1.0
         }
       `,
       transparent: true,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
+      side: DoubleSide,
+      blending: AdditiveBlending,
       depthWrite: false,
     });
   }, []);
@@ -88,22 +88,22 @@ export default function AuroraBorealis({ kpValue, earthPosition, intensity = 1.0
   // Update uniforms
   useFrame(({ clock }) => {
     if (northAuroraRef.current && southAuroraRef.current) {
-      const material = northAuroraRef.current.material as THREE.ShaderMaterial;
+      const material = northAuroraRef.current.material as ShaderMaterial;
       material.uniforms.time.value = clock.getElapsedTime();
       material.uniforms.kpValue.value = kpValue;
       material.uniforms.intensity.value = intensity;
       
       // Copy to south aurora
-      const southMaterial = southAuroraRef.current.material as THREE.ShaderMaterial;
+      const southMaterial = southAuroraRef.current.material as ShaderMaterial;
       southMaterial.uniforms.time.value = clock.getElapsedTime();
       southMaterial.uniforms.kpValue.value = kpValue;
       southMaterial.uniforms.intensity.value = intensity;
     }
   });
 
-  // Aurora curtain geometry (vertical plane with waves)
+  // Aurora curtain geometry (vertical plane with waves) - memoized for performance
   const auroraGeometry = useMemo(() => {
-    return new THREE.PlaneGeometry(3, 2, 64, 32);
+    return new PlaneGeometry(3, 2, 64, 32);
   }, []);
 
   return (
@@ -115,8 +115,8 @@ export default function AuroraBorealis({ kpValue, earthPosition, intensity = 1.0
           color={kpValue > 5 ? '#ff2255' : '#4ade80'} 
           transparent={true} 
           opacity={Math.min(kpValue * 0.05, 0.4)} 
-          blending={THREE.AdditiveBlending} 
-          side={THREE.DoubleSide} 
+          blending={AdditiveBlending} 
+          side={DoubleSide} 
           depthWrite={false} 
         />
       </mesh>

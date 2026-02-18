@@ -25,9 +25,7 @@ export function SurfaceViewControls({
     if (mythicTheme === 'NORSE' && loc.mythicName?.norse) {
       return loc.mythicName.norse;
     }
-    if (mythicTheme === 'SHEIKAH' && loc.mythicName?.sheikah) {
-      return loc.mythicName.sheikah;
-    }
+    return loc.name;
     return loc.name;
   };
 

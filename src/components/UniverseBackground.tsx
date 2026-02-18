@@ -1,9 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { TextureLoader, BackSide } from 'three';
-import * as THREE from 'three';
+import { TextureLoader, BackSide, Points, ShaderMaterial, AdditiveBlending } from 'three';
 import { useLoader } from '@react-three/fiber';
-import ConstellationLines from './ConstellationLines';
 
 export function UniverseBackground() {
   let texture = null;
@@ -25,19 +23,18 @@ export function UniverseBackground() {
         )}
       </mesh>
 
-      {/* 2. Optimized Starfield (Points with Shader) */}
-      <StarField count={5000} radius={60000} />
+      {/* 2. Optimised Starfield (Points with Shader) - RESTORED */}
+      <StarField count={8000} radius={60000} />
       
-      {/* 3. Constellation Lines */}
-      <ConstellationLines />
+      {/* 3. Constellation Lines - REMOVED for NASA transparency */}
     </group>
   );
 }
 
 function StarField({ count, radius }: { count: number, radius: number }) {
-  const pointsRef = useRef<THREE.Points>(null);
+  const pointsRef = useRef<Points>(null);
 
-  // Generate star positions, sizes, and blink speeds
+  // Generate star positions, sizes, and blink speeds - memoized for performance
   const { positions, sizes, blinkSpeeds } = useMemo(() => {
     const positions = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
@@ -65,9 +62,9 @@ function StarField({ count, radius }: { count: number, radius: number }) {
     return { positions, sizes, blinkSpeeds };
   }, [count, radius]);
 
-  // Custom shader material for stars
+  // Custom shader material for stars - memoized for performance
   const shaderMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
+    return new ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
       },
@@ -110,7 +107,7 @@ function StarField({ count, radius }: { count: number, radius: number }) {
       `,
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      blending: AdditiveBlending,
     });
   }, []);
 

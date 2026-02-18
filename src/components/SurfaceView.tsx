@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html, PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -6,17 +6,37 @@ import { UniverseBackground } from './UniverseBackground';
 
 interface SurfaceViewProps {
   location?: { name: string; lat: number; lon: number };
-  kpValue: number;
-  currentDate: Date;
-  onExit: () => void;
+  auroraData?: any;
+  onExit?: () => void;
+  onReturnToBridge?: () => void;
 }
 
 /**
  * SurfaceView - First-person view from planet surface
- * Look up at stars, aurora, and atmosphere
+ * Look up at stars, aurora, and atmosphere with PointerLockControls
  */
-export default function SurfaceView({ location, kpValue, currentDate, onExit }: SurfaceViewProps) {
+export default function SurfaceView({ location, auroraData, onExit, onReturnToBridge }: SurfaceViewProps) {
   const auroraRef = useRef<THREE.Mesh>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const controlsRef = useRef<any>(null);
+  
+  const kpValue = auroraData?.kpIndex?.kpValue || 3;
+  const currentDate = new Date();
+
+  // Listen for ESC key to unlock
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isLocked) {
+        setIsLocked(false);
+        if (controlsRef.current) {
+          controlsRef.current.unlock();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLocked]);
 
   // Animate aurora waves
   useFrame(({ clock }) => {
@@ -32,24 +52,24 @@ export default function SurfaceView({ location, kpValue, currentDate, onExit }: 
       {/* Sky (Universe Background) */}
       <UniverseBackground />
 
-      {/* Atmospheric Fog */}
-      <fog attach="fog" args={['#0a0a15', 10, 300]} />
+      {/* Atmospheric Fog (Deep space black) */}
+      <fog attach="fog" args={['#000', 1, 100]} />
 
       {/* Ambient Light */}
       <ambientLight intensity={0.3} />
       <directionalLight position={[50, 100, 50]} intensity={0.5} />
 
-      {/* Ground Terrain */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
-        <circleGeometry args={[200, 64]} />
+      {/* Massive Ground Plane (SKÖLL-TRACK) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
+        <circleGeometry args={[1000, 32]} />
         <meshStandardMaterial 
-          color="#1a1a2e" 
-          roughness={0.9} 
-          metalness={0.1}
+          color="#0a0a0a" 
+          roughness={1} 
+          metalness={0}
         />
       </mesh>
 
-      {/* Aurora in Sky (if Kp > 3) */}
+      {/* Aurora Curtains (Above the user's head at Y=50) */}
       {kpValue > 3 && (
         <mesh ref={auroraRef} position={[0, 50, -100]}>
           <planeGeometry args={[150, 40, 32, 16]} />
@@ -69,8 +89,39 @@ export default function SurfaceView({ location, kpValue, currentDate, onExit }: 
         <meshBasicMaterial color="#0d0d1a" side={THREE.BackSide} />
       </mesh>
 
-      {/* First-Person Controls */}
-      <PointerLockControls makeDefault />
+      {/* First-Person PointerLock Controls with constraints */}
+      <PointerLockControls 
+        ref={controlsRef}
+        maxPolarAngle={Math.PI / 1.5}
+        onLock={() => setIsLocked(true)}
+        onUnlock={() => setIsLocked(false)}
+      />
+
+      {/* Exit Button when not locked */}
+      {!isLocked && (
+        <Html fullscreen>
+          <div className="absolute top-10 left-1/2 transform -translate-x-1/2 z-50">
+            <button
+              onClick={() => {
+                if (onReturnToBridge) {
+                  onReturnToBridge();
+                } else if (onExit) {
+                  onExit();
+                }
+              }}
+              className="pointer-events-auto px-8 py-4 bg-cyan-600 hover:bg-cyan-500 
+                       border-2 border-cyan-400 rounded-lg text-white font-bold text-lg
+                       transition-all hover:scale-110 shadow-[0_0_30px_rgba(6,182,212,0.8)]
+                       flex items-center gap-3 animate-pulse"
+            >
+              🚀 LAUNCH TO ORBIT
+            </button>
+            <p className="text-center text-gray-400 text-sm mt-2 font-mono">
+              Click anywhere to look around • ESC to unlock
+            </p>
+          </div>
+        </Html>
+      )}
 
       {/* HUD Welcome Message */}
       <Html

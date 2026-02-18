@@ -115,41 +115,6 @@ export function MythicThemeSelector({ theme, onThemeChange }: MythicThemeSelecto
                   )}
                 </div>
               </button>
-
-              {/* SHEIKAH Theme */}
-              <button
-                onClick={() => {
-                  onThemeChange('SHEIKAH');
-                  setIsOpen(false);
-                }}
-                className={`w-full text-left px-3 py-2 rounded transition-all duration-200 mt-1 ${
-                  theme === 'SHEIKAH'
-                    ? 'bg-teal-500/20 border border-teal-500/40'
-                    : 'hover:bg-white/5'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded flex items-center justify-center text-lg"
-                    style={{
-                      background: `linear-gradient(135deg, ${THEME_CONFIGS.SHEIKAH.primaryColor}40, ${THEME_CONFIGS.SHEIKAH.secondaryColor}40)`,
-                    }}
-                  >
-                    🔷
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-white">
-                      Ancient Sheikah
-                    </div>
-                    <div className="text-xs text-white/50">
-                      Zelda · Guardians · Shrines
-                    </div>
-                  </div>
-                  {theme === 'SHEIKAH' && (
-                    <div className="ml-auto text-teal-400">✓</div>
-                  )}
-                </div>
-              </button>
             </div>
 
             {/* Footer */}

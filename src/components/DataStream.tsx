@@ -71,9 +71,7 @@ function MetricCard({ metric, mythicTheme }: { metric: DataMetric; mythicTheme: 
     if (mythicTheme === 'NORSE' && metric.mythicName?.norse) {
       return metric.mythicName.norse;
     }
-    if (mythicTheme === 'SHEIKAH' && metric.mythicName?.sheikah) {
-      return metric.mythicName.sheikah;
-    }
+    return metric.name;
     return metric.name;
   };
 
@@ -118,7 +116,7 @@ function MetricCard({ metric, mythicTheme }: { metric: DataMetric; mythicTheme: 
       DSCOVR: '🌐',
       GOES: '📡',
       HEIMDALL: mythicTheme === 'NORSE' ? '🎺' : '👁️',
-      COMPUTED: mythicTheme === 'NORSE' ? '⚔️' : mythicTheme === 'SHEIKAH' ? '🔷' : '🧮',
+      COMPUTED: mythicTheme === 'NORSE' ? '⚔️' : '🧮',
     };
     return icons[metric.source] || '📊';
   };

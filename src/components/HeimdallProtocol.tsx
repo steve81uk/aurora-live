@@ -83,7 +83,7 @@ export function HeimdallProtocol({
           {theme === 'NORSE' && windSpeed > 700 && (
             <div className="text-4xl animate-bounce">🎺</div>
           )}
-          {theme === 'SHEIKAH' && windSpeed > 700 && (
+          {theme === 'NORSE' && windSpeed > 700 && (
             <div className="text-4xl animate-spin" style={{ animationDuration: '2s' }}>
               🔴
             </div>

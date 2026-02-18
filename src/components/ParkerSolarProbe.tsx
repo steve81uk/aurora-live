@@ -2,6 +2,8 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import * as React from 'react';
+import { useSimpleOcclusion } from '../hooks/useOcclusionDetection';
 
 /**
  * ParkerSolarProbe - NASA's Parker Solar Probe
@@ -11,20 +13,47 @@ import * as THREE from 'three';
 export function ParkerSolarProbe() {
   const probeRef = useRef<THREE.Group>(null);
   const [isHovered, setIsHovered] = React.useState(false);
+  const positionRef = useRef(new THREE.Vector3());
+
+  // Sun occlusion detection
+  const isVisible = useSimpleOcclusion(
+    positionRef.current,
+    new THREE.Vector3(0, 0, 0), // Sun center
+    5 // Sun radius
+  );
 
   useFrame(({ clock }) => {
     if (probeRef.current) {
-      const t = clock.getElapsedTime() * 2; // Fast orbit (realistic speed would be even faster)
+      const t = clock.getElapsedTime() * 0.08; // MUCH SLOWER - realistic 88-day orbit
       
-      // Elliptical orbit near sun (perihelion ~0.04 AU, aphelion ~0.7 AU)
-      const a = 4; // Semi-major axis (screen units)
-      const b = 2; // Semi-minor axis (makes it elliptical)
+      // Elliptical orbit parameters (perihelion ~0.04 AU, aphelion ~0.7 AU)
+      // Using proper ellipse equation to avoid center intersection
+      const a = 8; // Increased semi-major axis - orbit further out
+      const e = 0.88; // Very high eccentricity (extremely elliptical)
       
-      probeRef.current.position.set(
-        Math.cos(t) * a, 
-        Math.sin(t * 1.5) * 1, // Slight inclination
-        Math.sin(t) * b
-      );
+      // Polar coordinates for ellipse: r = a(1-e²)/(1+e*cos(θ))
+      const theta = t;
+      const r = (a * (1 - e * e)) / (1 + e * Math.cos(theta));
+      
+      // Convert to Cartesian with inclination
+      const inclination = 7 * (Math.PI / 180); // 7° orbit inclination
+      const x = r * Math.cos(theta);
+      const y = r * Math.sin(theta) * Math.sin(inclination);
+      const z = r * Math.sin(theta) * Math.cos(inclination);
+      
+      // CRITICAL: Ensure minimum distance from Sun center (never closer than Sun radius)
+      const distanceFromCenter = Math.sqrt(x * x + y * y + z * z);
+      const MIN_DISTANCE = 6.0; // Sun radius is 5, add 1.0 safety margin (more clearance)
+      
+      if (distanceFromCenter < MIN_DISTANCE) {
+        // If too close, push outward to safe distance
+        const scale = MIN_DISTANCE / distanceFromCenter;
+        probeRef.current.position.set(x * scale, y * scale, z * scale);
+      } else {
+        probeRef.current.position.set(x, y, z);
+      }
+      
+      positionRef.current.copy(probeRef.current.position);
       
       // Rotate probe for visual effect
       probeRef.current.rotation.y += 0.05;
@@ -66,8 +95,8 @@ export function ParkerSolarProbe() {
         <meshBasicMaterial color="#3b82f6" />
       </mesh>
 
-      {/* Hover Info Card */}
-      {isHovered && (
+      {/* Hover Info Card - Only show if visible and not occluded */}
+      {isHovered && isVisible && (
         <Html distanceFactor={8} position={[0, 0.3, 0]}>
           <div className="bg-black/95 backdrop-blur-xl border border-orange-500 rounded-lg p-3 text-[10px] min-w-[180px]">
             <div className="text-orange-400 font-bold text-xs">PARKER SOLAR PROBE</div>
@@ -83,6 +112,3 @@ export function ParkerSolarProbe() {
     </group>
   );
 }
-
-// Need to import React at the top
-import * as React from 'react';

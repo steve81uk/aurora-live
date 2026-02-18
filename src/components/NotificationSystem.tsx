@@ -31,10 +31,10 @@ export function NotificationSystem() {
     
     if (result === 'granted') {
       setEnabled(true);
-      new Notification('Aurora Live Notifications', {
+      new Notification('SKÖLL-TRACK Notifications', {
         body: 'You will now receive alerts for Kp > 5 storms!',
         icon: '/favicon.ico',
-        tag: 'aurora-welcome'
+        tag: 'skoll-track-welcome'
       });
     }
   }

@@ -15,12 +15,12 @@ export default function LoadingScreen({ isLoading, progress }: LoadingScreenProp
   const [time, setTime] = useState(0);
 
   useEffect(() => {
-    if (progress < 20) setDisplayText('INITIALIZING AURORA SYSTEM');
+    if (progress < 20) setDisplayText('INITIALIZING SKÖLL-TRACK');
     else if (progress < 40) setDisplayText('LOADING SOLAR SYSTEM');
     else if (progress < 60) setDisplayText('MAPPING PLANETARY ORBITS');
     else if (progress < 80) setDisplayText('CONNECTING TO NOAA SWPC');
     else if (progress < 95) setDisplayText('CALIBRATING SENSORS');
-    else setDisplayText('AURORA LIVE - READY');
+    else setDisplayText('SKÖLL-TRACK - READY');
   }, [progress]);
 
   // Animate time for wave motion
@@ -126,44 +126,110 @@ export default function LoadingScreen({ isLoading, progress }: LoadingScreenProp
       {/* Central Content */}
       <div className="relative z-10 flex flex-col items-center">
         
-        {/* Aurora Logo/Icon */}
+        {/* Wolf Head Aurora Logo */}
         <div className="relative mb-8">
-          {/* Pulsing aurora circle */}
+          {/* Pulsing glow effect */}
           <div className="absolute inset-0 animate-ping opacity-20">
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-green-400 via-cyan-400 to-purple-500"></div>
+            <svg width="200" height="200" viewBox="0 0 200 200" className="drop-shadow-[0_0_60px_rgba(16,185,129,0.8)]">
+              <path
+                d="M 100 30 L 85 50 L 75 45 L 70 60 L 65 55 L 60 70 L 55 65 L 50 85 L 45 90 L 40 110 L 45 130 L 55 145 L 70 155 L 85 160 L 100 165 L 115 160 L 130 155 L 145 145 L 155 130 L 160 110 L 155 90 L 150 85 L 145 65 L 140 70 L 135 55 L 130 60 L 125 45 L 115 50 Z"
+                fill="url(#wolf-gradient)"
+              />
+            </svg>
           </div>
           
-          {/* Main circle with Earth */}
-          <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 via-green-400 to-blue-600 shadow-[0_0_60px_rgba(16,185,129,0.6)] flex items-center justify-center">
-            {/* Earth rotation effect */}
-            <div 
-              className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 via-green-500 to-blue-500 relative overflow-hidden"
-              style={{
-                animation: 'spin 8s linear infinite',
-                boxShadow: 'inset 0 0 30px rgba(0,0,0,0.3)'
-              }}
-            >
-              {/* Cloud layer */}
-              <div className="absolute inset-0 bg-white/20 rounded-full" style={{
-                background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), transparent 50%)`
-              }}></div>
-            </div>
+          {/* Main Wolf Head with Aurora colors */}
+          <svg 
+            width="200" 
+            height="200" 
+            viewBox="0 0 200 200" 
+            className="relative drop-shadow-[0_0_60px_rgba(16,185,129,0.6)]"
+          >
+            <defs>
+              <linearGradient id="wolf-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#10b981" stopOpacity="0.9"/>
+                <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.8"/>
+                <stop offset="100%" stopColor="#a855f7" stopOpacity="0.9"/>
+              </linearGradient>
+              <linearGradient id="wolf-eyes" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#06D6A0"/>
+                <stop offset="100%" stopColor="#10b981"/>
+              </linearGradient>
+            </defs>
             
-            {/* Aurora glow ring */}
-            <div 
-              className="absolute inset-0 rounded-full"
+            {/* Wolf silhouette - ears, head outline */}
+            <path
+              d="M 100 30 
+                 L 85 50 L 75 45 L 70 60 L 65 55 L 60 70 L 55 65 L 50 85 L 45 90 L 40 110 
+                 L 45 130 L 55 145 L 70 155 L 85 160 L 100 165 
+                 L 115 160 L 130 155 L 145 145 L 155 130 L 160 110 
+                 L 155 90 L 150 85 L 145 65 L 140 70 L 135 55 L 130 60 L 125 45 L 115 50 
+                 Z"
+              fill="none"
+              stroke="url(#wolf-gradient)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               style={{
-                background: `radial-gradient(circle, transparent 60%, rgba(16, 185, 129, ${Math.sin(time) * 0.2 + 0.3}) 80%, transparent 100%)`,
-                animation: 'pulse 2s ease-in-out infinite'
+                filter: 'drop-shadow(0 0 20px rgba(16,185,129,0.8))',
+                animation: 'pulse 3s ease-in-out infinite'
               }}
-            ></div>
-          </div>
+            />
+            
+            {/* Snout detail */}
+            <path
+              d="M 100 140 L 90 150 L 100 155 L 110 150 Z"
+              fill="none"
+              stroke="url(#wolf-gradient)"
+              strokeWidth="2"
+              opacity="0.8"
+            />
+            
+            {/* Glowing eyes */}
+            <circle cx="80" cy="95" r="4" fill="url(#wolf-eyes)" className="animate-pulse">
+              <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="120" cy="95" r="4" fill="url(#wolf-eyes)" className="animate-pulse">
+              <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
+            </circle>
+            
+            {/* Aurora particle effects around wolf */}
+            {[...Array(12)].map((_, i) => {
+              const angle = (i / 12) * Math.PI * 2;
+              const radius = 90;
+              const x = 100 + Math.cos(angle) * radius;
+              const y = 100 + Math.sin(angle) * radius;
+              return (
+                <circle 
+                  key={i} 
+                  cx={x} 
+                  cy={y} 
+                  r="2" 
+                  fill={i % 3 === 0 ? '#10b981' : i % 3 === 1 ? '#06b6d4' : '#a855f7'}
+                  opacity="0.6"
+                >
+                  <animate 
+                    attributeName="r" 
+                    values="1;3;1" 
+                    dur={`${2 + i * 0.2}s`} 
+                    repeatCount="indefinite"
+                  />
+                  <animate 
+                    attributeName="opacity" 
+                    values="0.3;0.8;0.3" 
+                    dur={`${2 + i * 0.2}s`} 
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              );
+            })}
+          </svg>
         </div>
 
         {/* Progress Text */}
         <div className="text-center mb-6">
           <div className="text-2xl font-bold bg-gradient-to-r from-green-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent mb-2 animate-pulse">
-            AURORA LIVE
+            SKÖLL-TRACK
           </div>
           <div className="text-cyan-400 font-mono text-sm tracking-wider mb-1">
             {displayText}

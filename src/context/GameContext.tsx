@@ -42,7 +42,7 @@ const ACHIEVEMENTS: Achievement[] = [
 export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(() => {
     // Load from localStorage
-    const saved = localStorage.getItem('aurora-live-game-state');
+    const saved = localStorage.getItem('skoll-track-game-state');
     if (saved) {
       const parsed = JSON.parse(saved);
       return {
@@ -66,7 +66,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   // Save to localStorage whenever state changes
   useEffect(() => {
-    localStorage.setItem('aurora-live-game-state', JSON.stringify({
+    localStorage.setItem('skoll-track-game-state', JSON.stringify({
       xp: gameState.xp,
       level: gameState.level,
       visitedBodies: Array.from(gameState.visitedBodies),

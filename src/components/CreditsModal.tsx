@@ -12,7 +12,7 @@ export function CreditsModal({ onClose }: CreditsModalProps) {
         <div className="bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border-b border-cyan-500/30 p-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-cyan-300">SYSTEM DATA SOURCES</h2>
-            <p className="text-sm text-cyan-400/80 mt-1">Powered by NASA, NOAA, and Open Source</p>
+            <p className="text-sm text-cyan-400/80 mt-1">Powered by NOAA & Open Source</p>
           </div>
           <button
             onClick={onClose}
@@ -78,16 +78,16 @@ export function CreditsModal({ onClose }: CreditsModalProps) {
               <strong className="text-cyan-300">Built by:</strong> Stephen Edwards
             </p>
             <p className="text-xs text-cyan-400/60 mt-2">
-              Solar Admiral • Galactic Positioning System • Aurora Live Tracker
+              SKÖLL-TRACK · Track the Sun's Fury · Solar System Explorer
             </p>
           </div>
 
           {/* Attribution */}
           <div className="pt-4 border-t border-cyan-500/20">
             <p className="text-xs text-cyan-400/60 text-center">
-              All space weather data provided by NASA and NOAA for public use.
+              All space weather data provided by NOAA SWPC for public use.
               <br />
-              Planetary imagery courtesy of NASA and Solar System Scope.
+              Planetary imagery courtesy of Solar System Scope and public data sources.
             </p>
           </div>
         </div>

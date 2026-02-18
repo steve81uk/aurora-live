@@ -5,12 +5,12 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Vector3, Group, AdditiveBlending } from 'three';
 
 interface Meteor {
   id: string;
-  position: THREE.Vector3;
-  velocity: THREE.Vector3;
+  position: Vector3;
+  velocity: Vector3;
   brightness: number;
   lifetime: number;
   age: number;
@@ -18,7 +18,7 @@ interface Meteor {
 
 export function MeteorShowerSystem() {
   const [meteors, setMeteors] = useState<Meteor[]>([]);
-  const groupRef = useRef<THREE.Group>(null);
+  const groupRef = useRef<Group>(null);
   
   // Fetch real meteor data from NASA Fireball API
   useEffect(() => {
@@ -58,7 +58,7 @@ export function MeteorShowerSystem() {
       const phi = Math.random() * Math.PI;
       const radius = 50 + Math.random() * 30; // Start far from center
       
-      const position = new THREE.Vector3(
+      const position = new Vector3(
         radius * Math.sin(phi) * Math.cos(theta),
         radius * Math.cos(phi),
         radius * Math.sin(phi) * Math.sin(theta)
@@ -109,7 +109,7 @@ export function MeteorShowerSystem() {
         const phi = Math.random() * Math.PI;
         const radius = 60 + Math.random() * 20;
         
-        const position = new THREE.Vector3(
+        const position = new Vector3(
           radius * Math.sin(phi) * Math.cos(theta),
           radius * Math.cos(phi),
           radius * Math.sin(phi) * Math.sin(theta)
@@ -154,7 +154,7 @@ export function MeteorShowerSystem() {
                 color="#ffffff"
                 transparent
                 opacity={opacity}
-                blending={THREE.AdditiveBlending}
+                blending={AdditiveBlending}
                 depthWrite={false}
               />
             </mesh>
@@ -180,7 +180,7 @@ export function MeteorShowerSystem() {
                 color="#ffaa00"
                 transparent
                 opacity={opacity * 0.6}
-                blending={THREE.AdditiveBlending}
+                blending={AdditiveBlending}
                 depthWrite={false}
               />
             </line>

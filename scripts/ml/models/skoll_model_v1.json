@@ -1,0 +1,71 @@
+{
+  "model_version": "skoll_v1",
+  "trained_at": "2026-02-18T07:07:21.471537",
+  "carrington_weighting": true,
+  "train_test_split": "70/30",
+  "features": {
+    "input_features": [
+      "bt",
+      "bx",
+      "by",
+      "bz",
+      "speed",
+      "density",
+      "temperature",
+      "kp",
+      "dst",
+      "newell_coupling",
+      "alfven_velocity",
+      "mach_alfven"
+    ],
+    "target": "wolf_formula"
+  },
+  "scaler": {
+    "mean": [
+      6.042857142857143,
+      -2.2357142857142853,
+      1.6857142857142855,
+      -4.000000000000001,
+      437.03928571428565,
+      6.907142857142857,
+      98428.57142857143,
+      2.7357142857142853,
+      -17.142857142857142,
+      78.92791707142855,
+      50.17146885714286,
+      8.178571428571429
+    ],
+    "scale": [
+      0.7384484561897192,
+      0.598339539126099,
+      0.5890150893739515,
+      0.859401785296859,
+      20.526465308504154,
+      1.0572635066287777,
+      6388.765649999399,
+      0.7056983803875652,
+      12.26992340677656,
+      36.944756382728805,
+      2.5984149320161887,
+      0.45853582416297245
+    ]
+  },
+  "weights": {
+    "note": "TensorFlow not available - placeholder weights"
+  },
+  "metrics": {},
+  "carrington_params": {
+    "bt_max": 1700.0,
+    "bz_min": -1500.0,
+    "speed_max": 2500.0,
+    "dst_min": -1760.0,
+    "kp_max": 9.0,
+    "wolf_formula_max": 25000.0
+  },
+  "metadata": {
+    "architecture": "LSTM (64->32->16->1)",
+    "optimizer": "Adam",
+    "loss": "MSE with Carrington weighting",
+    "description": "Aurora prediction model trained on OMNIWeb data with 1859 Carrington Event emphasis"
+  }
+}

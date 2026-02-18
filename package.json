@@ -1,13 +1,16 @@
 {
-  "name": "aurora-live",
+  "name": "skoll-track",
   "private": true,
-  "version": "0.0.0",
+  "version": "3.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ml:fetch": "python scripts/data-mining/fetch_historical.py",
+    "ml:train": "echo 'ML training pipeline - requires Python + TensorFlow'",
+    "ml:export": "echo 'Export trained model to TensorFlow.js format'"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -19,8 +22,12 @@
     "@types/three": "^0.182.0",
     "astronomy-engine": "^2.1.19",
     "bezier-easing": "^2.1.0",
+    "d3-array": "^3.2.4",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.34.0",
+    "fuse.js": "^7.1.0",
     "gsap": "^3.14.2",
+    "howler": "^2.2.4",
     "lucide-react": "^0.563.0",
     "plotly.js-dist-min": "^3.3.1",
     "rc-slider": "^11.1.9",
@@ -28,12 +35,14 @@
     "react-dom": "^19.2.0",
     "react-plotly.js": "^2.6.0",
     "recharts": "^3.7.0",
+    "simple-statistics": "^7.8.8",
     "stats.js": "^0.17.0",
     "three": "^0.182.0",
     "three-stdlib": "^2.36.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/howler": "^2.2.12",
     "@types/node": "^24.10.9",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

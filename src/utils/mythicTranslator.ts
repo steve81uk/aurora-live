@@ -18,8 +18,6 @@ export function translateToMythic(
 
   if (theme === 'NORSE') {
     return translateToNorse(kpIndex, windSpeed, bz, dst);
-  } else if (theme === 'SHEIKAH') {
-    return translateToSheikah(kpIndex, windSpeed, bz, dst);
   } else {
     return translateToSciFi(kpIndex, windSpeed, bz, dst);
   }

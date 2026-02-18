@@ -1,6 +1,10 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { PhotorealisticSunShader } from '../shaders/PhotorealisticSunShader';
+import { isSolarFlareActive } from '../services/liveDataService';
+import { useLiveSpaceWeather } from '../hooks/useLiveSpaceWeather';
+import { fetchXRayFlux, fetchSunspotData } from '../services/solarDataEnhanced';
 
 interface RealisticSunProps {
   onBodyFocus: (name: string) => void;
@@ -11,6 +15,15 @@ export function RealisticSun({ onBodyFocus, kpValue = 3 }: RealisticSunProps) {
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const flareGroupRef = useRef<THREE.Group>(null);
+  const sunMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  
+  // State for enhanced data
+  const [xrayIntensity, setXrayIntensity] = useState(0.0);
+  const [sunspotDensity, setSunspotDensity] = useState(0.5);
+  
+  // Get live space weather data
+  const liveData = useLiveSpaceWeather();
+  const isFlareActive = isSolarFlareActive(liveData.data);
 
   // Solar activity level based on Kp
   const activityLevel = useMemo(() => {
@@ -39,8 +52,44 @@ export function RealisticSun({ onBodyFocus, kpValue = 3 }: RealisticSunProps) {
     }
   }, [activityLevel]);
 
+  // Fetch enhanced data
+  useEffect(() => {
+    const fetchEnhancedData = async () => {
+      const xray = await fetchXRayFlux();
+      const sunspots = await fetchSunspotData();
+      
+      if (xray) setXrayIntensity(xray.intensity);
+      if (sunspots) setSunspotDensity(sunspots.surfaceDetailLevel);
+    };
+    
+    fetchEnhancedData();
+    const interval = setInterval(fetchEnhancedData, 60000); // 60s refresh
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Create the photorealistic sun shader material
+  const sunMaterial = useMemo(() => {
+    const material = new THREE.ShaderMaterial({
+      uniforms: THREE.UniformsUtils.clone(PhotorealisticSunShader.uniforms),
+      vertexShader: PhotorealisticSunShader.vertexShader,
+      fragmentShader: PhotorealisticSunShader.fragmentShader,
+      side: THREE.FrontSide
+    });
+    sunMaterialRef.current = material;
+    return material;
+  }, []);
+
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    
+    // Update shader uniforms (PhotorealisticSunShader)
+    if (sunMaterialRef.current && sunMaterialRef.current.uniforms) {
+      sunMaterialRef.current.uniforms.uTime.value = t;
+      sunMaterialRef.current.uniforms.uXRayIntensity.value = xrayIntensity;
+      sunMaterialRef.current.uniforms.uSunspotDensity.value = sunspotDensity;
+      sunMaterialRef.current.uniforms.uRotationSpeed.value = 0.01;
+    }
     
     if (glowRef.current) {
       // Pulse intensity based on activity
@@ -63,10 +112,22 @@ export function RealisticSun({ onBodyFocus, kpValue = 3 }: RealisticSunProps) {
 
   return (
     <group ref={groupRef} onClick={(e) => { e.stopPropagation(); onBodyFocus('Sun'); }}>
-      {/* 1. CORE STAR (Color changes with Kp) */}
+      {/* 0. INVISIBLE DEPTH SPHERE - For proper occlusion of particles & objects */}
       <mesh>
-        <sphereGeometry args={[5, 32, 32]} />
-        <meshBasicMaterial color={coreColor} toneMapped={false} />
+        <sphereGeometry args={[5.1, 32, 32]} />
+        <meshBasicMaterial 
+          color="#000000" 
+          transparent 
+          opacity={0} 
+          depthWrite={true}
+          colorWrite={false}
+        />
+      </mesh>
+
+      {/* 1. CORE STAR with Enhanced Shader */}
+      <mesh>
+        <sphereGeometry args={[5, 64, 64]} />
+        <primitive object={sunMaterial} attach="material" />
       </mesh>
 
       {/* 2. INNER CORONA */}
@@ -77,7 +138,8 @@ export function RealisticSun({ onBodyFocus, kpValue = 3 }: RealisticSunProps) {
           transparent 
           opacity={activityLevel === 'extreme' ? 0.6 : 0.4} 
           side={THREE.BackSide} 
-          blending={THREE.AdditiveBlending} 
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
         />
       </mesh>
 

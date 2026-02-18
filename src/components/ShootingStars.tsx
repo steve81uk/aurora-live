@@ -1,38 +1,38 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Vector3, Color, Points, BufferGeometry, BufferAttribute, PointsMaterial, AdditiveBlending } from 'three';
 
 interface ShootingStar {
-  position: THREE.Vector3;
-  velocity: THREE.Vector3;
+  position: Vector3;
+  velocity: Vector3;
   life: number;
   maxLife: number;
   startTime: number;
-  color: THREE.Color;
+  color: Color;
 }
 
 export function ShootingStars() {
-  const starsRef = useRef<THREE.Points>(null);
+  const starsRef = useRef<Points>(null);
   const shootingStarsRef = useRef<ShootingStar[]>([]);
   const lastSpawnTime = useRef(0);
   
-  // Create geometry and material for shooting star trails
+  // Create geometry and material for shooting star trails - memoized for performance
   const { geometry, material } = useMemo(() => {
-    const geo = new THREE.BufferGeometry();
+    const geo = new BufferGeometry();
     const positions = new Float32Array(100 * 3); // Max 100 points in trails
     const colors = new Float32Array(100 * 3);
     const sizes = new Float32Array(100);
     
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    geo.setAttribute('position', new BufferAttribute(positions, 3));
+    geo.setAttribute('color', new BufferAttribute(colors, 3));
+    geo.setAttribute('size', new BufferAttribute(sizes, 1));
     
-    const mat = new THREE.PointsMaterial({
+    const mat = new PointsMaterial({
       size: 1.5,
       vertexColors: true,
       transparent: true,
       opacity: 0.9,
-      blending: THREE.AdditiveBlending,
+      blending: AdditiveBlending,
       depthWrite: false,
       sizeAttenuation: true,
     });
@@ -52,7 +52,7 @@ export function ShootingStars() {
       const phi = Math.PI / 6 + Math.random() * (Math.PI / 3); // Upper hemisphere bias
       const distance = 150 + Math.random() * 100;
       
-      const startPos = new THREE.Vector3(
+      const startPos = new Vector3(
         distance * Math.sin(phi) * Math.cos(theta),
         distance * Math.cos(phi),
         distance * Math.sin(phi) * Math.sin(theta)
@@ -60,7 +60,7 @@ export function ShootingStars() {
       
       // Random velocity (streak across sky)
       const speed = 15 + Math.random() * 25;
-      const direction = new THREE.Vector3(
+      const direction = new Vector3(
         (Math.random() - 0.5) * 2,
         (Math.random() - 0.5) * 0.5 - 0.5, // Bias downward
         (Math.random() - 0.5) * 2
@@ -70,13 +70,13 @@ export function ShootingStars() {
       
       // Random color (mostly white/blue, occasional green/yellow)
       const colorChoice = Math.random();
-      let color: THREE.Color;
+      let color: Color;
       if (colorChoice < 0.7) {
-        color = new THREE.Color(0xffffff); // White (70%)
+        color = new Color(0xffffff); // White (70%)
       } else if (colorChoice < 0.9) {
-        color = new THREE.Color(0xaaddff); // Blue-white (20%)
+        color = new Color(0xaaddff); // Blue-white (20%)
       } else {
-        color = new THREE.Color(0xffff88); // Yellow-green (10%)
+        color = new Color(0xffff88); // Yellow-green (10%)
       }
       
       shootingStarsRef.current.push({

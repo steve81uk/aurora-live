@@ -29,6 +29,7 @@ export interface LiveSpaceWeatherData {
     severity: 'watch' | 'warning' | 'alert';
     message: string;
     timestamp: string;
+    localTime?: string;
   }>;
   timestamp: Date;
   dataQuality: 'excellent' | 'good' | 'degraded' | 'fallback';
@@ -58,6 +59,61 @@ async function fetchKpData(): Promise<{ kp: number; planetaryA: number }> {
   } catch (error) {
     console.warn('KP fetch failed:', error);
     return { kp: 3, planetaryA: 10 };
+  }
+}
+
+/**
+ * Fetch NOAA SWPC alerts (solar flares, geomagnetic storms, CMEs)
+ */
+async function fetchNOAAAlertsData(): Promise<Array<{
+  id: string;
+  type: 'CME' | 'flare' | 'storm' | 'radiation';
+  severity: 'watch' | 'warning' | 'alert';
+  message: string;
+  timestamp: string;
+  localTime: string;
+}>> {
+  try {
+    const response = await fetch('https://services.swpc.noaa.gov/json/alerts.json');
+    if (!response.ok) throw new Error(`NOAA alerts API failed: ${response.status}`);
+    
+    const rawAlerts = await response.json();
+    
+    return rawAlerts.slice(0, 10).map((alert: any, index: number) => {
+      // Determine type from message
+      let type: 'CME' | 'flare' | 'storm' | 'radiation' = 'storm';
+      const msg = alert.message?.toLowerCase() || '';
+      if (msg.includes('flare') || msg.includes('x-ray')) type = 'flare';
+      else if (msg.includes('cme') || msg.includes('coronal')) type = 'CME';
+      else if (msg.includes('radiation') || msg.includes('proton')) type = 'radiation';
+      
+      // Determine severity
+      let severity: 'watch' | 'warning' | 'alert' = 'watch';
+      if (msg.includes('warning')) severity = 'warning';
+      else if (msg.includes('alert')) severity = 'alert';
+      
+      // Convert UTC to local time
+      const utcDate = new Date(alert.issue_datetime || Date.now());
+      const localTime = utcDate.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      
+      return {
+        id: `noaa-${index}-${Date.now()}`,
+        type,
+        severity,
+        message: alert.message || 'Unknown alert',
+        timestamp: alert.issue_datetime || new Date().toISOString(),
+        localTime
+      };
+    });
+  } catch (error) {
+    console.warn('NOAA alerts fetch failed:', error);
+    return [];
   }
 }
 
@@ -185,7 +241,7 @@ export async function fetchLiveSpaceWeather(): Promise<LiveSpaceWeatherData> {
       fetchKpData(),
       fetchSolarWindData(),
       fetchSolarActivity(),
-      fetchAlerts()
+      fetchNOAAAlertsData()
     ]);
     
     // Check data quality
@@ -316,6 +372,17 @@ function notifyListeners(data: LiveSpaceWeatherData): void {
       console.error('Listener error:', error);
     }
   });
+}
+
+/**
+ * Check if there's an active solar flare
+ */
+export function isSolarFlareActive(data: LiveSpaceWeatherData | null): boolean {
+  if (!data) return false;
+  return data.alerts.some(alert => 
+    (alert.type === 'flare' || alert.type === 'CME') && 
+    alert.severity !== 'watch'
+  );
 }
 
 // Clean up on module unload (browser only)

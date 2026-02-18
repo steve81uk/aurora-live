@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { useLiveSpaceWeather } from '../hooks/useLiveSpaceWeather';
 import { Activity, Radio, Sun, AlertTriangle, RefreshCw, CheckCircle, XCircle, Zap } from 'lucide-react';
+import { DataExportButton } from './DataExportButton';
 
 export function LiveDataPanel() {
   const { data, isLoading, lastUpdate, dataAge, refresh, isRefreshing } = useLiveSpaceWeather();

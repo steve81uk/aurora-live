@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex items-center justify-center h-screen bg-black text-white font-mono">
           <div className="max-w-2xl p-8 bg-red-900/20 border border-red-500 rounded-lg">
             <h1 className="text-3xl font-bold text-red-500 mb-4">⚠️ Application Error</h1>
-            <p className="text-gray-300 mb-4">Aurora Live encountered an error and couldn't render.</p>
+            <p className="text-gray-300 mb-4">SKÖLL-TRACK encountered an error and couldn't render.</p>
             
             <div className="bg-black/50 p-4 rounded mb-4 overflow-auto max-h-64">
               <p className="text-red-400 font-bold mb-2">Error:</p>

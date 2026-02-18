@@ -1,6 +1,6 @@
 // Mythic Theme System Types
 
-export type AppTheme = 'SCI_FI' | 'NORSE' | 'SHEIKAH';
+export type AppTheme = 'SCI_FI' | 'NORSE';
 
 export interface MythicData {
   title: string;
@@ -41,15 +41,5 @@ export const THEME_CONFIGS: Record<AppTheme, ThemeConfig> = {
     fontFamily: 'Inter',
     auroraColors: ['#ff0000', '#ff6b35', '#ffd700', '#00ff00', '#00d4ff', '#8b00ff'], // Bifröst rainbow
     particleColor: '#ff6b35',
-  },
-  SHEIKAH: {
-    name: 'Ancient Sheikah',
-    primaryColor: '#00d9ff', // Sheikah Teal
-    secondaryColor: '#ff6600', // Malice Orange
-    accentColor: '#1a1a1a', // Deep Black
-    glowColor: 'rgba(0, 217, 255, 0.5)',
-    fontFamily: 'Inter',
-    auroraColors: ['#00d9ff', '#0088ff', '#ff6600', '#ff0000'],
-    particleColor: '#00d9ff',
   },
 };

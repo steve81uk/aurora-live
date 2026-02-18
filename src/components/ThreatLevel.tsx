@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { AlertTriangle, Zap, Shield, Activity } from 'lucide-react';
 
 interface ThreatLevelProps {
-  kpValue: number;
-  solarWindSpeed: number;
-  bz: number | null;
+  kpValue?: number;
+  solarWindSpeed?: number;
+  bz?: number | null;
 }
 
 /**
@@ -12,22 +12,27 @@ interface ThreatLevelProps {
  * Real-time space weather threat assessment
  * Inspired by NOAA scales and NASA impact predictions
  */
-export default function ThreatLevel({ kpValue, solarWindSpeed, bz }: ThreatLevelProps) {
+export default function ThreatLevel({ kpValue = 0, solarWindSpeed = 400, bz = null }: ThreatLevelProps) {
+  // Safety check: ensure values are numbers
+  const safeKp = typeof kpValue === 'number' && !isNaN(kpValue) ? kpValue : 0;
+  const safeSolarWind = typeof solarWindSpeed === 'number' && !isNaN(solarWindSpeed) ? solarWindSpeed : 400;
+  const safeBz = typeof bz === 'number' && !isNaN(bz) ? bz : null;
+  
   const threat = useMemo(() => {
     // Calculate composite threat score (0-100)
     let score = 0;
     
     // Kp contribution (0-50 points)
-    score += (kpValue / 9) * 50;
+    score += (safeKp / 9) * 50;
     
     // Solar wind speed contribution (0-30 points)
-    if (solarWindSpeed > 800) score += 30;
-    else if (solarWindSpeed > 600) score += 20;
-    else if (solarWindSpeed > 500) score += 10;
+    if (safeSolarWind > 800) score += 30;
+    else if (safeSolarWind > 600) score += 20;
+    else if (safeSolarWind > 500) score += 10;
     
     // Bz (southward IMF) contribution (0-20 points)
-    if (bz !== null && bz < -10) score += 20;
-    else if (bz !== null && bz < -5) score += 10;
+    if (safeBz !== null && safeBz < -10) score += 20;
+    else if (safeBz !== null && safeBz < -5) score += 10;
     
     // Threat levels
     if (score >= 80) return { level: 'EXTREME', color: '#ff0000', bg: 'bg-red-900/40', border: 'border-red-500', text: 'text-red-400', icon: AlertTriangle, label: 'CRITICAL THREAT' };
@@ -35,29 +40,29 @@ export default function ThreatLevel({ kpValue, solarWindSpeed, bz }: ThreatLevel
     if (score >= 40) return { level: 'MODERATE', color: '#ffcc00', bg: 'bg-yellow-900/40', border: 'border-yellow-500', text: 'text-yellow-400', icon: Activity, label: 'ELEVATED' };
     if (score >= 20) return { level: 'MINOR', color: '#00ff00', bg: 'bg-green-900/40', border: 'border-green-500', text: 'text-green-400', icon: Shield, label: 'NOMINAL' };
     return { level: 'QUIET', color: '#00ccff', bg: 'bg-cyan-900/40', border: 'border-cyan-500', text: 'text-cyan-400', icon: Shield, label: 'ALL CLEAR' };
-  }, [kpValue, solarWindSpeed, bz]);
+  }, [safeKp, safeSolarWind, safeBz]);
 
   const impacts = useMemo(() => {
     const list: string[] = [];
     
-    if (kpValue >= 7) {
+    if (safeKp >= 7) {
       list.push('⚡ Power grid fluctuations possible');
       list.push('📡 Satellite operations affected');
       list.push('✈️ HF radio blackouts likely');
-    } else if (kpValue >= 5) {
+    } else if (safeKp >= 5) {
       list.push('⚡ Minor power anomalies possible');
       list.push('📡 Satellite tracking degraded');
       list.push('📻 HF radio interference');
-    } else if (kpValue >= 3) {
+    } else if (safeKp >= 3) {
       list.push('📡 GPS accuracy reduced');
       list.push('📻 Weak HF propagation');
     }
     
-    if (solarWindSpeed > 700) {
+    if (safeSolarWind > 700) {
       list.push('🌪️ Extreme solar wind pressure');
     }
     
-    if (bz !== null && bz < -10) {
+    if (safeBz !== null && safeBz < -10) {
       list.push('🧲 Strong southward IMF (geoeffective)');
     }
     
@@ -66,7 +71,7 @@ export default function ThreatLevel({ kpValue, solarWindSpeed, bz }: ThreatLevel
     }
     
     return list;
-  }, [kpValue, solarWindSpeed, bz]);
+  }, [safeKp, safeSolarWind, safeBz]);
 
   const Icon = threat.icon;
 
@@ -86,7 +91,7 @@ export default function ThreatLevel({ kpValue, solarWindSpeed, bz }: ThreatLevel
         <div 
           className={`h-full transition-all duration-1000 ease-out`}
           style={{ 
-            width: `${Math.min((kpValue / 9) * 100, 100)}%`,
+            width: `${Math.min((safeKp / 9) * 100, 100)}%`,
             backgroundColor: threat.color,
             boxShadow: `0 0 10px ${threat.color}`
           }}
@@ -97,19 +102,19 @@ export default function ThreatLevel({ kpValue, solarWindSpeed, bz }: ThreatLevel
       <div className="space-y-1 text-[10px] text-gray-300 mb-2">
         <div className="flex justify-between">
           <span>Kp Index:</span>
-          <span className={`font-bold ${threat.text}`}>{kpValue.toFixed(1)}</span>
+          <span className={`font-bold ${threat.text}`}>{safeKp.toFixed(1)}</span>
         </div>
         <div className="flex justify-between">
           <span>Solar Wind:</span>
-          <span className={`font-bold ${solarWindSpeed > 600 ? 'text-red-400' : 'text-gray-400'}`}>
-            {solarWindSpeed.toFixed(0)} km/s
+          <span className={`font-bold ${safeSolarWind > 600 ? 'text-red-400' : 'text-gray-400'}`}>
+            {safeSolarWind.toFixed(0)} km/s
           </span>
         </div>
-        {bz !== null && (
+        {safeBz !== null && (
           <div className="flex justify-between">
             <span>IMF Bz:</span>
-            <span className={`font-bold ${bz < -5 ? 'text-red-400' : 'text-gray-400'}`}>
-              {bz.toFixed(1)} nT
+            <span className={`font-bold ${safeBz < -5 ? 'text-red-400' : 'text-gray-400'}`}>
+              {safeBz.toFixed(1)} nT
             </span>
           </div>
         )}
@@ -126,14 +131,14 @@ export default function ThreatLevel({ kpValue, solarWindSpeed, bz }: ThreatLevel
       </div>
 
       {/* Aurora Probability */}
-      {kpValue >= 3 && (
+      {safeKp >= 3 && (
         <div className={`mt-2 pt-2 border-t ${threat.border} text-center`}>
           <div className="text-[9px] text-gray-500 mb-1">AURORA PROBABILITY</div>
           <div className={`text-xl font-bold ${threat.text}`}>
-            {Math.min(Math.round((kpValue / 9) * 100), 100)}%
+            {Math.min(Math.round((safeKp / 9) * 100), 100)}%
           </div>
           <div className="text-[8px] text-gray-400">
-            Visible at latitude {Math.max(40, 67 - (kpValue * 3))}°
+            Visible at latitude {Math.max(40, 67 - (safeKp * 3))}°
           </div>
         </div>
       )}

@@ -1,6 +1,18 @@
+@import './styles/typography.css';
+
+/* Award-Site-Clean Layout System */
+@import './styles/award-layout.css';
+
+/* Aurora-Obsidian Theme */
+@import './styles/aurora-obsidian.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+
+/* Existing custom styles below... */
 
 * {
   margin: 0;
@@ -10,6 +22,24 @@
 
 :root {
   color-scheme: dark;
+  
+  /* SKÖLL-TRACK Aurora Palette */
+  --wolf-cyan: #06D6A0;        /* Sköll's eyes */
+  --aurora-green: #10b981;
+  --aurora-cyan: #06b6d4;
+  --aurora-purple: #a855f7;
+  --aurora-orange: #ff8c42;    /* Solar flare */
+  
+  /* Norse neutrals */
+  --raven-black: #0a0a0a;
+  --ash-gray: #1a1a1a;
+  --stone-gray: #2a2a2a;
+  --mist-gray: #3a3a3a;
+  
+  --primary-accent: var(--wolf-cyan);
+  --primary-bg: #000000;
+  --surface-bg: var(--ash-gray);
+  --text-primary: #FFFFFF;
 }
 
 html, body, #root {
@@ -17,11 +47,13 @@ html, body, #root {
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden; /* Allow vertical scroll, block horizontal */
+  overflow-y: auto;
   background: #000;
   font-size: 16px;
   color: #ffffff;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Rajdhani', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: 0.05em;  /* Norse aesthetic - wider tracking */
 }
 
 canvas {
@@ -29,6 +61,70 @@ canvas {
   width: 100% !important;
   height: 100% !important;
   display: block !important;
+}
+
+/* ============================================ */
+/* NORSE TYPOGRAPHY STYLES */
+/* ============================================ */
+
+/* Rune-style headers (wide tracking, bold) */
+.rune-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Data Display Typography */
+.data-mono {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.header-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Scan-line Effect (Mission Control aesthetic) */
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.scanline-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(
+    transparent 50%,
+    rgba(0, 255, 255, 0.02) 51%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.3;
+}
+
+.scanline-sweep {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(
+    transparent,
+    rgba(0, 255, 255, 0.1),
+    transparent
+  );
+  animation: scan 8s linear infinite;
+  pointer-events: none;
+  z-index: 9998;
 }
 
 .hide-scrollbar {
@@ -40,24 +136,399 @@ canvas {
   display: none;  /* Chrome, Safari, Opera */
 }
 
+/* ============================================ */
+/* THEMED SCROLLBARS - WOLF AURORA STYLE */
+/* ============================================ */
+
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(6, 182, 212, 0.5) rgba(0, 0, 0, 0.2);
+  scrollbar-color: rgba(6, 214, 160, 0.6) rgba(10, 10, 10, 0.8);
 }
 
 *::-webkit-scrollbar {
-  width: 10px;
+  width: 12px;
+  height: 12px;
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 5px;
+  background: rgba(10, 10, 10, 0.8);
+  border-radius: 6px;
+  border: 1px solid rgba(6, 214, 160, 0.1);
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(6, 182, 212, 0.5);
-  border-radius: 5px;
-  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: linear-gradient(
+    180deg,
+    rgba(6, 214, 160, 0.8),
+    rgba(6, 182, 212, 0.6)
+  );
+  border-radius: 6px;
+  border: 2px solid rgba(10, 10, 10, 0.8);
+  transition: all 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(6, 214, 160, 1),
+    rgba(6, 182, 212, 0.8)
+  );
+  box-shadow: 0 0 10px rgba(6, 214, 160, 0.6);
+}
+
+*::-webkit-scrollbar-corner {
+  background: rgba(10, 10, 10, 0.8);
+}
+
+/* Enhanced wolf-scroll for modules */
+.wolf-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 214, 160, 0.8) rgba(10, 10, 10, 0.9);
+}
+
+.wolf-scroll::-webkit-scrollbar {
+  width: 14px;
+}
+
+.wolf-scroll::-webkit-scrollbar-track {
+  background: linear-gradient(
+    90deg,
+    rgba(10, 10, 10, 0.9),
+    rgba(26, 26, 26, 0.9),
+    rgba(10, 10, 10, 0.9)
+  );
+  border-radius: 7px;
+  border: 1px solid rgba(6, 214, 160, 0.2);
+}
+
+.wolf-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 0.9),
+    rgba(6, 214, 160, 0.9),
+    rgba(6, 182, 212, 0.7)
+  );
+  border-radius: 7px;
+  border: 2px solid rgba(10, 10, 10, 0.9);
+  box-shadow: 
+    inset 0 0 6px rgba(255, 255, 255, 0.2),
+    0 0 10px rgba(6, 214, 160, 0.4);
+}
+
+.wolf-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 1),
+    rgba(6, 214, 160, 1),
+    rgba(6, 182, 212, 0.9)
+  );
+  box-shadow: 
+    inset 0 0 8px rgba(255, 255, 255, 0.3),
+    0 0 15px rgba(6, 214, 160, 0.8);
+}
+
+/* ============================================ */
+/* NORSE WOLF DESIGN PATTERNS */
+/* ============================================ */
+
+/* Wolf border (glowing cyan/green) */
+.wolf-border {
+  border: 2px solid rgba(16, 185, 129, 0.4);
+  transition: border-color 200ms ease;
+}
+
+.wolf-border:hover,
+.wolf-border.active {
+  border-color: rgba(6, 214, 160, 1);
+  box-shadow: 0 0 20px rgba(6, 214, 160, 0.4);
+}
+
+/* Angular Norse shape (slanted edge) */
+.norse-angle {
+  clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+}
+
+/* Corner notch (runestone style) */
+.norse-notch {
+  clip-path: polygon(
+    0 0, 
+    calc(100% - 12px) 0, 
+    100% 12px, 
+    100% 100%, 
+    0 100%
+  );
+}
+
+/* Rune divider line */
+.rune-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(6, 214, 160, 0.6) 20%,
+    rgba(6, 214, 160, 0.6) 80%,
+    transparent
+  );
+  position: relative;
+}
+
+.rune-divider::before,
+.rune-divider::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(6, 214, 160, 0.8);
+  top: -1.5px;
+}
+
+.rune-divider::before { left: 10%; }
+.rune-divider::after { right: 10%; }
+
+/* Wolf paw print trail animation */
+@keyframes pawFade {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 0.8; transform: scale(1); }
+}
+
+.paw-trail {
+  animation: pawFade 1.5s ease-in-out infinite;
+}
+
+/* Howl pulse (for buttons/icons) */
+@keyframes howl {
+  0%, 100% { 
+    transform: scale(1);
+    filter: drop-shadow(0 0 4px rgba(6, 214, 160, 0.4));
+  }
+  50% { 
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 12px rgba(6, 214, 160, 0.8));
+  }
+}
+
+.howl-pulse {
+  animation: howl 3s ease-in-out infinite;
+}
+
+/* Aurora wave background */
+@keyframes auroraWave {
+  0%, 100% { 
+    background-position: 0% 50%;
+  }
+  50% { 
+    background-position: 100% 50%;
+  }
+}
+
+.aurora-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.1),
+    rgba(6, 182, 212, 0.1),
+    rgba(168, 85, 247, 0.1)
+  );
+  background-size: 200% 200%;
+  animation: auroraWave 8s ease infinite;
+}
+
+/* ============================================ */
+/* THEMED FORM ELEMENTS - AURORA STYLE */
+/* ============================================ */
+
+/* Select dropdowns */
+select,
+.themed-select {
+  background: rgba(10, 10, 10, 0.9);
+  border: 2px solid rgba(6, 214, 160, 0.4);
+  border-radius: 6px;
+  color: #06b6d4;
+  padding: 8px 32px 8px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2306b6d4' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+select:hover,
+.themed-select:hover {
+  border-color: rgba(6, 214, 160, 0.8);
+  box-shadow: 0 0 15px rgba(6, 214, 160, 0.3);
+  background-color: rgba(10, 10, 10, 1);
+}
+
+select:focus,
+.themed-select:focus {
+  border-color: rgba(6, 214, 160, 1);
+  box-shadow: 
+    0 0 20px rgba(6, 214, 160, 0.5),
+    inset 0 0 10px rgba(6, 214, 160, 0.1);
+}
+
+select option {
+  background: rgba(10, 10, 10, 0.98);
+  color: #06b6d4;
+  padding: 10px;
+  font-weight: 600;
+}
+
+select option:hover,
+select option:checked {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.3),
+    rgba(6, 214, 160, 0.3)
+  );
+  color: #10b981;
+}
+
+/* Input fields */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+textarea {
+  background: rgba(10, 10, 10, 0.9);
+  border: 2px solid rgba(6, 214, 160, 0.4);
+  border-radius: 6px;
+  color: #ffffff;
+  padding: 10px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+input:hover,
+textarea:hover {
+  border-color: rgba(6, 214, 160, 0.6);
+  background-color: rgba(10, 10, 10, 1);
+}
+
+input:focus,
+textarea:focus {
+  border-color: rgba(6, 214, 160, 1);
+  box-shadow: 
+    0 0 20px rgba(6, 214, 160, 0.4),
+    inset 0 0 8px rgba(6, 214, 160, 0.1);
+  background-color: rgba(10, 10, 10, 1);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(6, 182, 212, 0.5);
+  font-style: italic;
+}
+
+/* Buttons - Universal theming */
+button:not(.no-theme),
+.themed-button {
+  background: linear-gradient(
+    135deg,
+    rgba(6, 214, 160, 0.15),
+    rgba(6, 182, 212, 0.15)
+  );
+  border: 2px solid rgba(6, 214, 160, 0.5);
+  border-radius: 6px;
+  color: #06b6d4;
+  padding: 10px 20px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+button:not(.no-theme):hover,
+.themed-button:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(6, 214, 160, 0.3),
+    rgba(6, 182, 212, 0.3)
+  );
+  border-color: rgba(6, 214, 160, 0.8);
+  color: #10b981;
+  box-shadow: 
+    0 0 20px rgba(6, 214, 160, 0.4),
+    inset 0 0 15px rgba(6, 214, 160, 0.1);
+  transform: translateY(-2px);
+}
+
+button:not(.no-theme):active,
+.themed-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 0 10px rgba(6, 214, 160, 0.3),
+    inset 0 0 10px rgba(6, 214, 160, 0.2);
+}
+
+button:disabled,
+.themed-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================ */
+/* END THEMED FORM ELEMENTS */
+/* ============================================ */
+
+/* Wolf eye glow effect */
+.wolf-eye-glow {
+  position: relative;
+}
+
+.wolf-eye-glow::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  background: radial-gradient(
+    circle,
+    rgba(6, 214, 160, 0.4) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: blink 4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 90%, 100% { opacity: 1; }
+  95% { opacity: 0.2; }
+}
+
+/* Norse text glow */
+.norse-glow {
+  text-shadow: 
+    0 0 10px rgba(6, 214, 160, 0.6),
+    0 0 20px rgba(6, 214, 160, 0.4),
+    0 0 30px rgba(6, 214, 160, 0.2);
+}
+
+/* Tracking effect (wolf chasing) */
+@keyframes track {
+  0% { left: -10%; }
+  100% { left: 110%; }
+}
+
+.tracking-indicator {
+  position: absolute;
+  animation: track 3s linear infinite;
 }
 
 *::-webkit-scrollbar-thumb:hover {

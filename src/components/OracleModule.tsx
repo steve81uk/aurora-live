@@ -8,6 +8,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { motion } from 'framer-motion';
 import { Activity, Wind, Zap, Thermometer, Radio } from 'lucide-react';
 import { useLiveSpaceWeather } from '../hooks/useLiveSpaceWeather';
+import { convertUTCToLocal, getSeverityColor } from '../utils/timeConverter';
+import { isSolarFlareActive } from '../services/liveDataService';
+import { DataExportButton } from './DataExportButton';
 
 interface MetricTileProps {
   icon: React.ReactNode;
@@ -28,7 +31,7 @@ function MetricTile({ icon, label, value, unit, status, isHighKp }: MetricTilePr
   return (
     <div 
       className={`
-        backdrop-blur-md border-2 rounded-lg p-4
+        backdrop-blur-md border-2 rounded-lg p-4 neon-glow-hover
         ${statusColors[status]}
         ${isHighKp ? 'animate-pulse' : ''}
         transition-all duration-300
@@ -55,8 +58,8 @@ function GridGuardianGauge({ score }: { score: number }) {
   };
 
   return (
-    <div className="backdrop-blur-md bg-black/40 border-2 border-cyan-500 rounded-lg p-6">
-      <h3 className="text-cyan-400 font-mono text-sm uppercase tracking-widest mb-4 text-center">
+    <div className="holo-card p-6">
+      <h3 className="neon-cyan font-mono text-sm uppercase tracking-widest mb-4 text-center">
         Grid Guardian Score
       </h3>
       
@@ -118,77 +121,149 @@ function GridGuardianGauge({ score }: { score: number }) {
 }
 
 export function OracleModule() {
-  const { data, isLoading, quality } = useLiveSpaceWeather();
+  const { data, isLoading, dataAge } = useLiveSpaceWeather();
   const [forecastData, setForecastData] = useState<any[]>([]);
   const [gridScore, setGridScore] = useState(85);
+
+  // Calculate API quality based on data age
+  const quality = isLoading ? 'loading' : 
+                  dataAge < 10 ? 'excellent' : 
+                  dataAge < 60 ? 'good' : 
+                  'degraded';
 
   useEffect(() => {
     // Generate forecast data (mock for now - will use ML model later)
     const now = Date.now();
     const historical = Array.from({ length: 12 }, (_, i) => ({
       time: new Date(now - (12 - i) * 3600000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      actual: Math.max(0, Math.min(9, (data?.kpIndex?.kpValue || 3) + (Math.random() - 0.5) * 2)),
+      actual: Math.max(0, Math.min(9, (data?.kpIndex || 3) + (Math.random() - 0.5) * 2)),
       predicted: null
     }));
 
     const future = Array.from({ length: 6 }, (_, i) => ({
       time: new Date(now + (i + 1) * 3600000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       actual: null,
-      predicted: Math.max(0, Math.min(9, (data?.kpIndex?.kpValue || 3) + (Math.random() - 0.5) * 3))
+      predicted: Math.max(0, Math.min(9, (data?.kpIndex || 3) + (Math.random() - 0.5) * 3))
     }));
 
     setForecastData([...historical, ...future]);
 
     // Calculate Grid Guardian score based on current conditions
-    const kp = data?.kpIndex?.kpValue || 0;
+    const kp = data?.kpIndex || 0;
     const solarWind = data?.solarWind?.speed || 400;
     const score = Math.max(0, 100 - (kp * 8) - ((solarWind - 400) / 10));
     setGridScore(score);
   }, [data]);
 
-  const kpValue = data?.kpIndex?.kpValue || 0;
+  const kpValue = data?.kpIndex || 0;
   const isHighKp = kpValue > 5;
+  const hasActiveFlare = isSolarFlareActive(data);
 
   return (
-    <div className="w-screen h-screen bg-slate-950 overflow-hidden relative">
-      {/* Scan-line overlay */}
-      <div 
-        className="absolute inset-0 pointer-events-none z-50 opacity-20"
-        style={{
-          background: `
-            linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-            linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))
-          `,
-          backgroundSize: '100% 4px, 6px 100%'
-        }}
-      />
-
+    <div className="w-full max-w-6xl mx-auto p-4 md:p-8 lg:p-12 h-full overflow-y-auto pointer-events-auto wolf-scroll obsidian-bg">
       {/* Header */}
-      <div className="p-4 border-b border-cyan-900/50 backdrop-blur-md bg-black/20">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-cyan-400 font-mono tracking-widest">
-            THE ORACLE // METRICS ROOM
+      <header className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 aurora-text">
+            THE ORACLE
           </h1>
-          <div className="flex gap-6 text-xs font-mono text-gray-400">
-            <span>LATENCY: <span className="text-green-400">{quality === 'excellent' ? '< 5s' : '~10s'}</span></span>
-            <span>API: <span className={quality === 'excellent' ? 'text-green-400' : 'text-yellow-400'}>
-              {quality.toUpperCase()}
-            </span></span>
-            <span>TIME: <span className="text-cyan-400">{new Date().toLocaleTimeString()}</span></span>
+          <p className="text-cyan-400/70 font-mono tracking-wider">
+            Wolf-Senses • Neural Forecast • Grid Guardian
+          </p>
+        </div>
+        <DataExportButton
+          data={{
+            kpIndex: data?.kpIndex,
+            solarWind: data?.solarWind,
+            solar: data?.solar,
+            gridScore,
+            forecastData,
+            timestamp: new Date().toISOString()
+          }}
+          filename="oracle-metrics"
+          label="ORACLE DATA"
+        />
+      </header>
+
+      {/* Wolf-Senses Grid */}
+      <section className="mb-8">
+        <h2 className="text-xl font-bold text-amber-400 mb-4 font-mono tracking-widest">
+          WOLF-SENSES
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="metric-panel holo-card">
+            <div className="metric-label">Proton Density</div>
+            <div className="metric-value">{data?.solarWind.density?.toFixed(2) || 'N/A'}</div>
+            <div className="text-xs text-gray-500 mt-1">p/cm³</div>
+          </div>
+          <div className="metric-panel holo-card">
+            <div className="metric-label">X-Ray Flux</div>
+            <div className="metric-value">{data?.solar.xrayFlux || 'C1.0'}</div>
+            <div className="text-xs text-gray-500 mt-1">Class</div>
+          </div>
+          <div className="metric-panel holo-card">
+            <div className="metric-label">Magnetopause</div>
+            <div className="metric-value">{(9.5 + Math.random()).toFixed(1)}</div>
+            <div className="text-xs text-gray-500 mt-1">Earth Radii</div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Main grid */}
-      <div className="grid grid-cols-12 gap-4 p-4 h-[calc(100vh-80px)]">
-        {/* Forecast Window (cols 1-8) */}
-        <div className="col-span-8 backdrop-blur-md bg-black/40 border-2 border-cyan-500 rounded-lg p-6">
-          <h2 className="text-cyan-400 font-mono text-lg uppercase tracking-widest mb-4 flex items-center gap-2">
+      {/* Active Solar Prominences */}
+      {hasActiveFlare && (
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-red-400 mb-4 font-mono tracking-widest neon-red animate-pulse">
+            ⚠️ ACTIVE SOLAR PROMINENCE
+          </h2>
+          <div className="holo-card p-6 border-red-500/30">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="text-lg font-bold text-red-400">Solar Flare Detected</div>
+                <div className="text-sm text-cyan-400/70 font-mono">
+                  Real-time NOAA SWPC Alert
+                </div>
+              </div>
+              <div className="px-3 py-1 rounded bg-red-500/20 border border-red-500/50 text-red-400 text-xs font-bold">
+                ACTIVE
+              </div>
+            </div>
+            
+            {data?.alerts
+              .filter(alert => alert.type === 'flare' || alert.type === 'CME')
+              .slice(0, 3)
+              .map((alert, idx) => (
+                <div key={idx} className="metric-panel mb-3 last:mb-0">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="text-sm font-mono text-cyan-400">{alert.message}</div>
+                      <div className="text-xs text-gray-500 mt-1">{alert.localTime}</div>
+                    </div>
+                    <div 
+                      className="px-2 py-1 rounded text-xs font-bold"
+                      style={{ 
+                        backgroundColor: `${getSeverityColor(alert.timestamp)}22`,
+                        color: getSeverityColor(alert.timestamp)
+                      }}
+                    >
+                      {alert.severity.toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
+
+      {/* Main content */}
+      <div className="space-y-8">
+        {/* Forecast Window */}
+        <div className="holo-card p-6">
+          <h2 className="aurora-text-static font-mono text-lg uppercase tracking-widest mb-4 flex items-center gap-2">
             <Activity size={20} />
             Neural Storm Forecast
           </h2>
           
-          <ResponsiveContainer width="100%" height="80%">
+          <ResponsiveContainer width="100%" height={400}>
             <AreaChart data={forecastData}>
               <defs>
                 <linearGradient id="actualGradient" x1="0" y1="0" x2="0" y2="1">
@@ -249,13 +324,13 @@ export function OracleModule() {
           </ResponsiveContainer>
         </div>
 
-        {/* Grid Guardian Gauge (cols 9-12) */}
-        <div className="col-span-4">
+        {/* Grid Guardian Gauge */}
+        <div>
           <GridGuardianGauge score={gridScore} />
         </div>
 
-        {/* Data Tiles (bottom, full width) */}
-        <div className="col-span-12 grid grid-cols-4 gap-4">
+        {/* Data Tiles */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <MetricTile
             icon={<Wind size={24} />}
             label="Solar Wind Speed"
@@ -302,25 +377,6 @@ export function OracleModule() {
             }
             isHighKp={isHighKp}
           />
-        </div>
-      </div>
-
-      {/* Deep Space Log (scrolling ticker) */}
-      <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-cyan-900/50 p-2 overflow-hidden">
-        <div className="flex items-center gap-4 animate-marquee">
-          <span className="text-cyan-400 font-mono text-xs whitespace-nowrap">
-            📡 DEEP SPACE LOG:
-          </span>
-          {data?.alerts?.map((alert: any, i: number) => (
-            <span key={i} className="text-yellow-400 font-mono text-xs whitespace-nowrap">
-              {alert.message || 'No recent events'} •
-            </span>
-          ))}
-          {!data?.alerts?.length && (
-            <span className="text-gray-500 font-mono text-xs whitespace-nowrap">
-              No active space weather alerts • System nominal •
-            </span>
-          )}
         </div>
       </div>
     </div>

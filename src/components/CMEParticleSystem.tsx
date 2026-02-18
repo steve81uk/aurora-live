@@ -5,7 +5,7 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Points, Vector3, AdditiveBlending } from 'three';
 
 interface CMEParticleSystemProps {
   active: boolean;
@@ -13,14 +13,14 @@ interface CMEParticleSystemProps {
 }
 
 export function CMEParticleSystem({ active, solarWindSpeed }: CMEParticleSystemProps) {
-  const particlesRef = useRef<THREE.Points>(null);
+  const particlesRef = useRef<Points>(null);
   const timeRef = useRef(0);
   
   // Calculate travel time from Sun to Earth (1 AU ≈ 150 million km)
   // Travel time in hours = 150,000,000 km / (speed km/s) / 3600 s/h
   const travelTimeHours = 150000000 / solarWindSpeed / 3600;
   
-  // Create particles
+  // Create particles - memoized for performance
   const { positions, velocities, sizes, colors } = useMemo(() => {
     const count = 5000;
     const positions = new Float32Array(count * 3);
@@ -29,11 +29,11 @@ export function CMEParticleSystem({ active, solarWindSpeed }: CMEParticleSystemP
     const colors = new Float32Array(count * 3);
     
     // Sun position (origin)
-    const sunPos = new THREE.Vector3(0, 0, 0);
+    const sunPos = new Vector3(0, 0, 0);
     // Earth position (40 units away based on AU_TO_SCREEN_UNITS)
-    const earthPos = new THREE.Vector3(40, 0, 0);
+    const earthPos = new Vector3(40, 0, 0);
     
-    const direction = new THREE.Vector3().subVectors(earthPos, sunPos).normalize();
+    const direction = new Vector3().subVectors(earthPos, sunPos).normalize();
     
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
@@ -132,7 +132,7 @@ export function CMEParticleSystem({ active, solarWindSpeed }: CMEParticleSystemP
         vertexColors
         transparent
         opacity={0.8}
-        blending={THREE.AdditiveBlending}
+        blending={AdditiveBlending}
         depthWrite={false}
         sizeAttenuation
       />

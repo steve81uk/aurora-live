@@ -1,8 +1,9 @@
-import { useRef, useState, useEffect } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { TextureLoader } from 'three';
+import { useOcclusionDetection } from '../hooks/useOcclusionDetection';
+import { useSmartLabelPosition, useLabelDistanceFade } from '../hooks/useSmartLabelPosition';
 
 interface ISSProps {
   onBodyFocus: (name: string | null) => void;
@@ -16,9 +17,38 @@ export default function ISS({ onBodyFocus, focusedBody, earthPosition, onVehicle
   const [issPosition, setIssPosition] = useState({ lat: 0, lon: 0, alt: 420 }); // Default orbit
   const [hovered, setHovered] = useState(false);
   const [velocity, setVelocity] = useState(7.66); // km/s orbital velocity
+  const positionRef = useRef(new THREE.Vector3());
   
-  // Load ISS sprite texture
-  const issTexture = useLoader(TextureLoader, 'https://upload.wikimedia.org/wikipedia/commons/d/d0/International_Space_Station_svg_icon.png');
+  // Occlusion detection (hide when behind Earth)
+  const isVisible = useOcclusionDetection(positionRef.current, [
+    { position: earthPosition, radius: 1.0 } // Earth radius
+  ]);
+  
+  // Smart label positioning (avoid overlaps)
+  const labelOffset = useSmartLabelPosition('ISS', positionRef.current, hovered && isVisible, 8);
+  
+  // Distance-based fade
+  const labelOpacity = useLabelDistanceFade(positionRef.current, 5, 50);
+  
+  // Create a simple canvas-based texture as fallback
+  const issTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // Draw a simple ISS icon
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(10, 28, 44, 8); // Main body
+      ctx.fillRect(20, 20, 24, 24); // Central module
+      ctx.fillRect(0, 30, 64, 4); // Solar panels
+      ctx.fillStyle = '#4A9EFF';
+      ctx.fillRect(22, 22, 20, 20); // Highlight
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, []);
 
   // Fetch real ISS position from API
   useEffect(() => {
@@ -62,6 +92,7 @@ export default function ISS({ onBodyFocus, focusedBody, earthPosition, onVehicle
       const pos = latLonToVector3(issPosition.lat, issPosition.lon, issPosition.alt);
       // Position relative to Earth
       issRef.current.position.copy(earthPosition).add(pos);
+      positionRef.current.copy(issRef.current.position);
       issRef.current.lookAt(earthPosition); // Always face Earth center
       issRef.current.rotation.z += 0.01; // Slow rotation for visual effect
     }
@@ -69,16 +100,12 @@ export default function ISS({ onBodyFocus, focusedBody, earthPosition, onVehicle
 
   return (
     <group ref={issRef}>
-      {/* ISS Sprite */}
+      {/* ISS Sprite (Much smaller, non-clickable) */}
       <sprite
-        scale={[2, 2, 2]}
-        onClick={(e) => {
-          e.stopPropagation();
-          onBodyFocus('ISS');
-        }}
+        scale={[0.3, 0.3, 0.3]}
         onPointerOver={() => {
           setHovered(true);
-          document.body.style.cursor = 'pointer';
+          document.body.style.cursor = 'default';
         }}
         onPointerOut={() => {
           setHovered(false);
@@ -88,10 +115,10 @@ export default function ISS({ onBodyFocus, focusedBody, earthPosition, onVehicle
         <spriteMaterial map={issTexture} transparent />
       </sprite>
 
-      {/* Hover Label */}
-      {hovered && focusedBody !== 'ISS' && (
-        <Html position={[0, 0.15, 0]} center style={{ pointerEvents: 'none' }}>
-          <div className="bg-black/95 backdrop-blur-xl border border-blue-400 rounded-lg p-3 text-sm font-mono text-blue-300 min-w-[200px] shadow-[0_0_25px_rgba(59,130,246,0.4)]">
+      {/* Hover Label - Only show if visible and not occluded */}
+      {hovered && focusedBody !== 'ISS' && isVisible && labelOpacity > 0.1 && (
+        <Html position={labelOffset} center style={{ pointerEvents: 'none', opacity: labelOpacity }}>
+          <div className="bg-black/95 backdrop-blur-xl border border-blue-400 rounded-lg p-3 text-sm font-mono text-blue-300 min-w-[200px] shadow-[0_0_25px_rgba(59,130,246,0.4)] transition-opacity duration-300">
             <h3 className="text-xl text-white font-bold mb-2">ISS</h3>
             <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
               <span className="font-bold">LAT:</span>

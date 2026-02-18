@@ -50,11 +50,8 @@ export default function Magnetosphere({
         color: '#4A9EFF',
         opacity: 0.05, // Ghost-like effect
         transparent: true,
-        blending: THREE.AdditiveBlending
-      });
-        transparent: true,
-        opacity: 0.05,
-        linewidth: 1,
+        blending: THREE.AdditiveBlending,
+        linewidth: 1
       });
       
       const line = new THREE.Line(geometry, material);

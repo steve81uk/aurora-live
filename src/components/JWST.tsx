@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useRef, useState, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import * as Astronomy from 'astronomy-engine';
-import { TextureLoader } from 'three';
+import { useOcclusionDetection } from '../hooks/useOcclusionDetection';
+import { useSmartLabelPosition, useLabelDistanceFade } from '../hooks/useSmartLabelPosition';
 
 const AU_TO_SCREEN_UNITS = 40;
 
@@ -21,16 +22,46 @@ interface JWSTProps {
 export default function JWST({ onBodyFocus, focusedBody, currentDate, onVehicleBoard }: JWSTProps) {
   const jwstRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
+  const positionRef = useRef(new THREE.Vector3());
   
-  // Load JWST texture with fallback (using ISS icon as placeholder)
-  const jwstTexture = useLoader(
-    TextureLoader,
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/JWST_spacecraft_model_2.png/500px-JWST_spacecraft_model_2.png',
-    undefined,
-    (error) => {
-      console.warn('Failed to load JWST texture:', error);
+  // Occlusion detection (can be hidden by Sun or Earth)
+  const isVisible = useOcclusionDetection(positionRef.current, [
+    { position: new THREE.Vector3(0, 0, 0), radius: 5 }, // Sun
+    { position: new THREE.Vector3(0, 0, 0), radius: 1.0 } // Earth (will update dynamically)
+  ]);
+  
+  // Smart label positioning
+  const labelOffset = useSmartLabelPosition('JWST', positionRef.current, hovered && isVisible, 6);
+  
+  // Distance fade
+  const labelOpacity = useLabelDistanceFade(positionRef.current, 10, 100);
+  
+  // Create a simple canvas-based texture as fallback
+  const jwstTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // Draw JWST hexagonal mirror
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        const x = 32 + 20 * Math.cos(angle);
+        const y = 32 + 20 * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#4A9EFF';
+      ctx.fillRect(28, 50, 8, 10); // Support structure
     }
-  );
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, []);
 
   useFrame(() => {
     if (jwstRef.current) {
@@ -55,6 +86,7 @@ export default function JWST({ onBodyFocus, focusedBody, currentDate, onVehicleB
         (earth.y + l2Offset.y) * AU_TO_SCREEN_UNITS,
         (earth.z + l2Offset.z) * AU_TO_SCREEN_UNITS
       );
+      positionRef.current.copy(jwstRef.current.position);
       
       // JWST always faces away from Sun (sunshield pointing at Sun)
       jwstRef.current.lookAt(
