@@ -51,6 +51,10 @@ import { useLiveSpaceWeather } from './hooks/useLiveSpaceWeather';
 // v3.17 GEOLOCATION
 import { useGeoLocation } from './hooks/useGeoLocation';
 
+// v3.18 PEAK VIEW
+import { calcAuroralPeakLocation } from './services/DataBridge';
+import type { AuroralPeakLocation } from './services/DataBridge';
+
 // v3.0 WEEK 2+ NEW FEATURES
 import { KpTrendChart } from './components/KpTrendChart';
 import { MLAuroraForecast } from './components/MLAuroraForecast';
@@ -167,13 +171,16 @@ function AppInner() {
   const hasZoomedToCambridge = useRef(false); // Prevent repeated interruptions per threshold crossing
 
   // v3.17: Geolocation — resolves to GPS coords or Cambridge fallback
-  const { location: geoLocation, permission: geoPermission } = useGeoLocation();
+  const { location: geoLocation, permission: geoPermission, setManualLocation, clearManualLocation, retry: retryGeo } = useGeoLocation();
   // homeStation is the persistent "anchor" (GPS or fallback); beaconLocation is a one-off manual override
   const [beaconLocation, setBeaconLocation] = useState<{ lat: number; lon: number; name: string } | null>(null);
   // The effective location used for camera zoom + UserBeacon in the scene
   const homeStation = beaconLocation ?? geoLocation;
   // Keep CAMBRIDGE as a constant anchor (used only when geoPermission === 'denied' and no beacon)
   const CAMBRIDGE = { lat: 52.2053, lon: 0.1218, name: 'Cambridge, UK' };
+
+  // v3.18: Auroral peak location — recalculated every time live data updates
+  const [peakLocation, setPeakLocation] = useState<AuroralPeakLocation | null>(null);
   
   const controlsRef = useRef<any>(null);
   const { data } = useAuroraData(LOCATIONS[0]);
@@ -219,6 +226,14 @@ function AppInner() {
     run();
     const interval = setInterval(run, 5 * 60 * 1000);
     return () => clearInterval(interval);
+  }, [liveData.data]);
+
+  // v3.18: Recalculate auroral peak whenever live data updates (piggybacks the 60s refresh)
+  useEffect(() => {
+    if (!liveData.data) return;
+    const kp = liveData.data.kpIndex ?? 3;
+    const bz = liveData.data.solarWind?.bz ?? 0;
+    setPeakLocation(calcAuroralPeakLocation(kp, bz));
   }, [liveData.data]);
 
   // v3.16/v3.17: Auto-zoom to Home Station when LSTM confidence ≥ 90%
@@ -440,8 +455,9 @@ function AppInner() {
                     userLocation={homeStation}
                     onEarthClick={(coords: { lat: number; lon: number }) => {
                       // Drop a Beacon: override the home station with a user-chosen point
-                      const beacon = { lat: coords.lat, lon: coords.lon, name: `Beacon ${coords.lat.toFixed(1)}°N ${coords.lon.toFixed(1)}°E` };
+                      const beacon = { lat: coords.lat, lon: coords.lon, name: `Beacon ${coords.lat.toFixed(1)}°N ${coords.lon.toFixed(1)}°E`, isUserLocation: true as const };
                       setBeaconLocation(beacon);
+                      setManualLocation(beacon); // persist to localStorage
                       setFocusedBody('Earth');
                     }}
                   />
@@ -866,7 +882,7 @@ function AppInner() {
                     <span>⊕</span>
                     <span>Custom Beacon Active</span>
                     <button
-                      onClick={() => setBeaconLocation(null)}
+                      onClick={() => { setBeaconLocation(null); clearManualLocation(); }}
                       className="ml-auto text-cyan-600 hover:text-cyan-300"
                       title="Clear beacon — revert to GPS / Cambridge"
                     >✕</button>
@@ -979,13 +995,40 @@ function AppInner() {
             </div>
           )}
           
-          {/* v3.6: NeuralLink (Search Bar) - Top Center */}
+          {/* v3.6/v3.18: NeuralLink (Search Bar + Peak View) - Top Center */}
           {!showMissionControl && (
             <NeuralLink
               planets={PLANETS}
               cities={CITIES}
               homeStation={homeStation}
               geoPermission={geoPermission}
+              peakLocation={peakLocation ?? undefined}
+              onGoPeak={peakLocation ? () => {
+                // Teleport camera to auroral oval sweet spot
+                setActiveModule('BRIDGE');
+                setFocusedBody('Earth');
+                setTimeout(() => {
+                  setSurfaceMode(true);
+                  setViewingLocation({ lat: peakLocation.lat, lon: peakLocation.lon, name: peakLocation.name });
+                }, 600);
+              } : undefined}
+              onSetHomeStation={() => {
+                // One-click: request GPS, persist to localStorage, update homeStation
+                retryGeo();
+                if (navigator?.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      setManualLocation({
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        name: 'Your Location',
+                        isUserLocation: true,
+                      });
+                    },
+                    () => { /* denied — retryGeo already triggers fallback */ }
+                  );
+                }
+              }}
               onSelect={(item, type) => {
                 if (type === 'planet') {
                   handleTravel(item.name);

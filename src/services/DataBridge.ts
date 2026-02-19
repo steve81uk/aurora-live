@@ -431,6 +431,90 @@ function createFallbackState(): SpaceState {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AURORAL PEAK LOCATION — Wolf-Sight Optimal Viewing Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The calculated optimal ground location for aurora viewing right now.
+ * Derived from the Feldstein–Starkov auroral oval model + live Kp/Bz data.
+ */
+export interface AuroralPeakLocation {
+  lat: number;
+  lon: number;
+  name: string;
+  /** Degrees the oval boundary sits from the geographic pole */
+  ovalEquatorwardLat: number;
+  confidence: 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME';
+  /** Brief plain-English explanation for citizen scientists */
+  reason: string;
+}
+
+/**
+ * Calculate the optimal aurora-viewing latitude and midnight-sector longitude
+ * for the current moment, given live IMF Bz and Kp values.
+ *
+ * Physics:
+ *  - Auroral oval equatorward edge ≈ 68° − 2.5 × Kp  (Feldstein & Starkov 1967)
+ *  - Southward IMF Bz expands the oval equatorward by ~0.5°/nT
+ *  - The midnight sector (lon opposing the Sun) is the brightest part of the oval
+ *  - Subsolar longitude = (UTC hour − 12) × 15°, midnight lon = +180° from that
+ *
+ * @param kpIndex  Current Kp index (0–9)
+ * @param bz       Current IMF Bz in nT (negative = southward = geoeffective)
+ * @returns        Lat/lon of the peak aurora spot right now
+ */
+export function calcAuroralPeakLocation(kpIndex: number, bz: number): AuroralPeakLocation {
+  // ── 1. Equatorward boundary latitude (magnetic) ───────────────────────────
+  // Each Kp unit pushes the oval ~2.5° equatorward
+  const bzExpansion = bz < 0 ? Math.min(Math.abs(bz) * 0.5, 6) : 0; // max +6°
+  const ovalEqLat = 68 - 2.5 * kpIndex + bzExpansion;
+
+  // Geographic latitude is ~3° south of magnetic latitude (simplified dipole tilt)
+  const peakGeoLat = Math.max(30, Math.min(80, ovalEqLat - 3));
+
+  // ── 2. Midnight-sector longitude ─────────────────────────────────────────
+  // Subsolar longitude tracks UTC time: at 12:00 UTC, Sun is over 0°.
+  const now = new Date();
+  const utcFrac = now.getUTCHours() + now.getUTCMinutes() / 60;
+  const subSolarLon = (utcFrac - 12) * 15;           // degrees, -180..180
+  const midnightLon = ((subSolarLon + 180) % 360) - 180; // opposite side
+
+  // ── 3. Name the latitude band ────────────────────────────────────────────
+  let name: string;
+  if (peakGeoLat >= 75)      name = 'High Arctic — Svalbard / Franz Josef Land';
+  else if (peakGeoLat >= 68) name = 'Northern Lapland / Northern Alaska';
+  else if (peakGeoLat >= 63) name = 'Iceland / Fairbanks, Alaska';
+  else if (peakGeoLat >= 58) name = 'Northern Scandinavia / Northern Canada';
+  else if (peakGeoLat >= 53) name = 'Scotland / Southern Canada';
+  else if (peakGeoLat >= 47) name = 'Northern England / Northern USA';
+  else                        name = 'Mid-Latitude Auroral Band';
+
+  // ── 4. Confidence based on Kp ─────────────────────────────────────────────
+  const confidence: AuroralPeakLocation['confidence'] =
+    kpIndex >= 7 ? 'EXTREME' :
+    kpIndex >= 5 ? 'HIGH' :
+    kpIndex >= 3 ? 'MODERATE' : 'LOW';
+
+  // ── 5. Human-readable reason ─────────────────────────────────────────────
+  const reason = [
+    `Kp ${kpIndex.toFixed(1)} drives oval to ~${peakGeoLat.toFixed(0)}°N.`,
+    bz < -5  ? ` Southward Bz (${bz.toFixed(1)} nT) is expanding the oval equatorward.` :
+    bz < 0   ? ` Mildly southward Bz (${bz.toFixed(1)} nT) is slightly geoeffective.` :
+               ` Northward Bz — activity may subside soon.`,
+    ` Midnight sector now near ${midnightLon.toFixed(0)}°.`
+  ].join('');
+
+  return {
+    lat: peakGeoLat,
+    lon: midnightLon,
+    name,
+    ovalEquatorwardLat: ovalEqLat,
+    confidence,
+    reason,
+  };
+}
+
 /**
  * React hook for DataBridge
  */

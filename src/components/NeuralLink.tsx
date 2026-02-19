@@ -8,6 +8,15 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin } from 'lucide-react';
 import Fuse from 'fuse.js';
 import type { GeoLocation, GeoPermission } from '../hooks/useGeoLocation';
+import type { AuroralPeakLocation } from '../services/DataBridge';
+
+// Confidence → colour mapping for the peak badge
+const CONFIDENCE_STYLE: Record<string, string> = {
+  EXTREME: 'bg-red-500/20 text-red-300 border-red-500/50',
+  HIGH:    'bg-orange-500/20 text-orange-300 border-orange-500/50',
+  MODERATE:'bg-yellow-500/20 text-yellow-300 border-yellow-500/50',
+  LOW:     'bg-gray-500/20 text-gray-400 border-gray-500/40',
+};
 
 interface NeuralLinkProps {
   planets: Array<{ name: string }>;
@@ -17,9 +26,15 @@ interface NeuralLinkProps {
   homeStation?: GeoLocation;
   /** Permission status from useGeoLocation */
   geoPermission?: GeoPermission;
+  /** Current auroral peak location (recalculated from live Kp/Bz) */
+  peakLocation?: AuroralPeakLocation;
+  /** Teleport camera to the peak aurora location */
+  onGoPeak?: () => void;
+  /** Request GPS and persist as Home Station */
+  onSetHomeStation?: () => void;
 }
 
-export function NeuralLink({ planets, cities, onSelect, homeStation, geoPermission }: NeuralLinkProps) {
+export function NeuralLink({ planets, cities, onSelect, homeStation, geoPermission, peakLocation, onGoPeak, onSetHomeStation }: NeuralLinkProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -217,7 +232,7 @@ export function NeuralLink({ planets, cities, onSelect, homeStation, geoPermissi
           )}
         </div>
 
-        {/* Pulsing Aurora Border Animation */}
+      {/* Pulsing Aurora Border Animation */}
         {query && (
           <div
             className="absolute inset-0 rounded-lg pointer-events-none"
@@ -233,12 +248,55 @@ export function NeuralLink({ planets, cities, onSelect, homeStation, geoPermissi
         )}
       </div>
 
-      {/* Hint */}
-      {!query && !isOpen && (
-        <div className="text-center mt-2 text-cyan-600 text-xs uppercase tracking-wide animate-pulse">
-          Neural Link Active • Press Ctrl+K
+      {/* ── GO TO PEAK — always visible when a peak is available ── */}
+      {peakLocation && (
+        <div className="mt-2 flex items-stretch gap-2">
+          {/* Peak info pill */}
+          <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg backdrop-blur-md bg-black/50 border border-green-500/30">
+            <span className="text-green-400 text-base leading-none">◎</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-bold text-green-300 font-['Rajdhani'] uppercase tracking-wide truncate">
+                {peakLocation.name}
+              </div>
+              <div className="text-[10px] text-gray-500 font-mono">
+                {peakLocation.lat.toFixed(1)}°N · {Math.abs(peakLocation.lon).toFixed(1)}°{peakLocation.lon >= 0 ? 'E' : 'W'}
+              </div>
+            </div>
+            <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded border font-mono uppercase ${CONFIDENCE_STYLE[peakLocation.confidence]}`}>
+              {peakLocation.confidence}
+            </span>
+          </div>
+
+          {/* GO TO PEAK button */}
+          <button
+            onClick={onGoPeak}
+            disabled={!onGoPeak}
+            className="shrink-0 px-3 py-2 rounded-lg backdrop-blur-md bg-green-500/20 border border-green-500/50 text-green-300 text-xs font-bold font-['Rajdhani'] uppercase tracking-wider hover:bg-green-500/40 hover:text-green-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_12px_rgba(34,197,94,0.3)]"
+            title={peakLocation.reason}
+          >
+            GO TO<br />PEAK ◎
+          </button>
         </div>
       )}
+
+      {/* Hint row: Ctrl+K + optional SET HOME button */}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        {!query && !isOpen && (
+          <div className="text-cyan-600 text-xs uppercase tracking-wide animate-pulse">
+            Neural Link Active • Ctrl+K
+          </div>
+        )}
+        {/* One-click Home Station setter */}
+        {onSetHomeStation && geoPermission !== 'granted' && (
+          <button
+            onClick={onSetHomeStation}
+            className="ml-auto text-[11px] px-2.5 py-1 rounded backdrop-blur-sm bg-cyan-900/50 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-200 font-mono uppercase tracking-wide transition-all"
+            title="Use your current GPS position as Home Station and save it"
+          >
+            📡 Set Home
+          </button>
+        )}
+      </div>
 
       {/* CSS Animations */}
       <style>{`
