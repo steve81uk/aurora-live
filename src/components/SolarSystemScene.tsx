@@ -676,7 +676,7 @@ export default function SolarSystemScene({ kpValue, currentDate = new Date(), fo
         xrayFlux={0} // Not used, keeping interface
         isActive={
           liveData.data 
-            ? (liveData.data.solar.xrayFlux === 'M' || liveData.data.solar.xrayFlux === 'X') 
+            ? (liveData.data.solar.xrayFlux.startsWith('M') || liveData.data.solar.xrayFlux.startsWith('X')) 
             : false
         }
         onImpact={() => {

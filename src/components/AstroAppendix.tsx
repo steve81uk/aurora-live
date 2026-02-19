@@ -26,10 +26,11 @@ export const AstroAppendix: React.FC<AstroAppendixProps> = ({ onClose }) => {
         {/* 1. THE MANIFESTO */}
         <TacticalCard title="MANIFESTO" icon={BookOpen}>
           <div className="space-y-4 text-gray-400 text-sm leading-relaxed">
-            <p><span className="text-cyan-400 font-bold uppercase">The Objective:</span> To democratise solar weather data. For too long, the Sun's fury remained locked behind academic paywalls.</p>
-            <p>SKÖLL-TRACK translates raw NOAA streams into a <span className="text-white">Wolf-Senses AI</span>. Whether you are an 8-year-old girl in Cambridge or an elite data alchemist, you deserve to see the storm coming.</p>
-            <div className="p-3 bg-cyan-950/30 border-l-2 border-cyan-500 italic">
-              "Predicting the solar wind to safeguard the local grid."
+            <p><span className="text-cyan-400 font-bold uppercase">The Objective:</span> To democratise solar weather data. For too long, the Sun's fury has remained obscured behind academic paywalls and impenetrable datasets.</p>
+            <p>SKÖLL-TRACK translates raw NOAA telemetry streams into an accessible <span className="text-white">Wolf-Senses AI</span>. Whether you are a curious schoolchild in Cambridge or a seasoned space weather researcher, you deserve to see the storm approaching.</p>
+            <p className="text-gray-500 text-xs">The platform is free, open, and citizen-science first. All data sources are attributed and documented in plain English.</p>
+            <div className="p-3 bg-cyan-950/30 border-l-2 border-cyan-500 italic text-xs">
+              "Predicting the solar wind to safeguard the infrastructure we all depend upon."
             </div>
           </div>
         </TacticalCard>
@@ -76,12 +77,31 @@ export const AstroAppendix: React.FC<AstroAppendixProps> = ({ onClose }) => {
         {/* 4. AI SYNERGY */}
         <TacticalCard title="AI SYNERGY" icon={Brain}>
           <div className="space-y-4 text-xs text-gray-400">
-            <p>Designed by a human Commander using an <span className="text-white">AI Command Fleet</span>. Claude Sonnet 4.5 orchestrated the code, while Wolfram Alpha validated the physics.</p>
+            <p>Conceived and directed by a human Systems Architect employing an <span className="text-white">AI Command Fleet</span>. The developer maintained full creative and scientific authority throughout; the AI served as a code-generation instrument under human command.</p>
+            <p>Physics validation was cross-referenced against NOAA documentation, NASA technical reports, and peer-reviewed literature on magnetospheric dynamics.</p>
             <div className="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 p-4 rounded border border-cyan-500/20 text-center">
-              <p className="text-cyan-400 font-bold font-mono tracking-tighter">STEVE81UK</p>
-              <p className="text-[10px] uppercase">Systems Architect</p>
+              <p className="text-cyan-400 font-bold font-mono tracking-tighter text-base">steve81uk</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Systems Architect</p>
+              <p className="text-[9px] text-gray-600 mt-1">Cambridge, United Kingdom</p>
             </div>
-            <a href="https://ko-fi.com/steve81uk" target="_blank" rel="noopener noreferrer" className="block text-center text-purple-400 hover:text-white transition-colors underline decoration-purple-500/30">Support the Mission</a>
+            <div className="flex flex-col gap-2">
+              <a
+                href="https://ko-fi.com/steve81uk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center text-orange-400 hover:text-orange-300 transition-colors text-[11px] underline decoration-orange-500/30"
+              >
+                ☕ Support the Mission on Ko-fi
+              </a>
+              <a
+                href="https://github.com/steve81uk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center text-cyan-400 hover:text-cyan-300 transition-colors text-[11px] underline decoration-cyan-500/30"
+              >
+                🐙 GitHub: steve81uk
+              </a>
+            </div>
           </div>
         </TacticalCard>
 

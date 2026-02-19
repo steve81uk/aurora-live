@@ -75,11 +75,11 @@ export function BridgeModule({
 
   // UNIFIED BRIDGE - 3-Column Tactical Grid
   return (
-    <div className="fixed inset-0 z-20 pointer-events-none">
-      <div className="w-full min-h-fit p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr] gap-4 pointer-events-auto max-w-[1920px] mx-auto">
+    <div className="fixed inset-0 z-20 pointer-events-none overflow-hidden">
+      <div className="w-full h-full p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr] gap-4 pointer-events-none max-w-[1920px] mx-auto items-start">
         
         {/* LEFT COLUMN - Primary Metrics */}
-        <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-8rem)]">
+        <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-3rem)] pointer-events-auto scrollbar-thin scrollbar-thumb-cyan-900 scrollbar-track-transparent">
           
           {/* Cinematic Mode Toggle */}
           <button
@@ -144,13 +144,13 @@ export function BridgeModule({
           />
         </div>
 
-        {/* CENTER COLUMN - Earth-Focused 3D Scene */}
-        <div className="relative min-h-[600px] pointer-events-auto">
+        {/* CENTER COLUMN - Earth-Focused 3D Scene (pointer-events: none — canvas handles its own) */}
+        <div className="relative min-h-[500px] pointer-events-none">
           {children}
         </div>
 
         {/* RIGHT COLUMN - Neural Forecaster + Charts */}
-        <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-8rem)]">
+        <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-3rem)] pointer-events-auto scrollbar-thin scrollbar-thumb-cyan-900 scrollbar-track-transparent">
           
           {/* Neural Forecaster - LSTM ML Predictions (TOP PRIORITY) */}
           <NeuralForecasterCard />
