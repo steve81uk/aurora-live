@@ -732,11 +732,6 @@ export function DataScienceLab() {
           </div>
         </div>
       </div>
-            Magnetic field Bz component fluctuation tracking for CME impact prediction
-          </div>
-        </div>
-
-      </div>
 
       {/* Footer Attribution */}
       <div className="mt-8 text-center text-xs text-gray-600 font-mono">

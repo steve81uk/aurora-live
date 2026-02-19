@@ -8,11 +8,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { neuralForecaster } from '../ml/LSTMForecaster';
-import { useSpaceState } from '../utils/DataBridge';
+import { useSpaceState } from '../services/DataBridge';
 import type { NeuralForecast, FeatureVector } from '../ml/types';
 
 export function NeuralForecasterCard() {
-  const spaceState = useSpaceState();
+  const { spaceState } = useSpaceState();
   const [forecast, setForecast] = useState<NeuralForecast | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);

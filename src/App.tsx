@@ -48,6 +48,9 @@ import type { AppTheme } from './types/mythic';
 import { LiveDataPanel } from './components/LiveDataPanel';
 import { useLiveSpaceWeather } from './hooks/useLiveSpaceWeather';
 
+// v3.17 GEOLOCATION
+import { useGeoLocation } from './hooks/useGeoLocation';
+
 // v3.0 WEEK 2+ NEW FEATURES
 import { KpTrendChart } from './components/KpTrendChart';
 import { MLAuroraForecast } from './components/MLAuroraForecast';
@@ -70,6 +73,10 @@ import { WeatherHUD } from './components/WeatherHUD';
 // v3.8 ADVANCED PHYSICS & SYSTEMS
 import { RadioBlackoutOverlay } from './components/RadioBlackoutOverlay';
 import { DeepSpaceTracker } from './components/DeepSpaceTracker';
+
+// v3.16 CAMBRIDGE AUTO-ZOOM: LSTM 90% severity trigger
+import { neuralForecaster } from './ml/LSTMForecaster';
+import type { NeuralForecast } from './ml/types';
 
 // v3.6 HOOKS
 import { useAlerts } from './hooks/useAlerts';
@@ -153,6 +160,20 @@ function AppInner() {
   // v3.8: Advanced systems state
   const [showDeepSpace, setShowDeepSpace] = useState(false);
   const [deepSpaceLogScale, setDeepSpaceLogScale] = useState(true);
+
+  // v3.16: Cambridge auto-zoom — fires when LSTM forecast hits 90% severity
+  const [lstmForecast, setLstmForecast] = useState<NeuralForecast | null>(null);
+  const [stormBannerVisible, setStormBannerVisible] = useState(false);
+  const hasZoomedToCambridge = useRef(false); // Prevent repeated interruptions per threshold crossing
+
+  // v3.17: Geolocation — resolves to GPS coords or Cambridge fallback
+  const { location: geoLocation, permission: geoPermission } = useGeoLocation();
+  // homeStation is the persistent "anchor" (GPS or fallback); beaconLocation is a one-off manual override
+  const [beaconLocation, setBeaconLocation] = useState<{ lat: number; lon: number; name: string } | null>(null);
+  // The effective location used for camera zoom + UserBeacon in the scene
+  const homeStation = beaconLocation ?? geoLocation;
+  // Keep CAMBRIDGE as a constant anchor (used only when geoPermission === 'denied' and no beacon)
+  const CAMBRIDGE = { lat: 52.2053, lon: 0.1218, name: 'Cambridge, UK' };
   
   const controlsRef = useRef<any>(null);
   const { data } = useAuroraData(LOCATIONS[0]);
@@ -162,13 +183,68 @@ function AppInner() {
   
   // Detect mobile
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // v3.16: Poll LSTM forecast every 5 minutes
+  useEffect(() => {
+    if (!liveData.data) return;
+    const buildFeatures = (d: typeof liveData.data) => {
+      const gen = (v: number, variance: number) =>
+        Array.from({ length: 24 }, (_, i) => v + Math.sin(i / 4) * variance * 0.3 + (Math.random() - 0.5) * variance * 0.5);
+      return {
+        solarWindSpeed: gen(d!.solarWind.speed, 100),
+        solarWindDensity: gen(d!.solarWind.density ?? 5, 3),
+        magneticFieldBz: gen(d!.solarWind.bz, 4),
+        magneticFieldBt: gen(Math.abs(d!.solarWind.bz) + 3, 2),
+        newellCouplingHistory: gen(0, 3000),
+        alfvenVelocityHistory: gen(50, 20),
+        syzygyIndex: 0.3,
+        jupiterSaturnAngle: 0.5,
+        solarRotationPhase: (Date.now() / (27 * 24 * 60 * 60 * 1000)) % 1,
+        solarCyclePhase: 0.6,
+        timeOfYear: new Date().getMonth() / 12,
+      };
+    };
+    const run = async () => {
+      try {
+        const features = buildFeatures(liveData.data);
+        const pred = await neuralForecaster.predict(features);
+        setLstmForecast(pred);
+      } catch (_) { /* silent — model weights may be untrained */ }
+    };
+    run();
+    const interval = setInterval(run, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [liveData.data]);
+
+  // v3.16/v3.17: Auto-zoom to Home Station when LSTM confidence ≥ 90%
+  useEffect(() => {
+    if (!lstmForecast) return;
+    const { sixHour, twelveHour, twentyFourHour } = lstmForecast.predictions;
+    const maxProb = Math.max(
+      sixHour.stormProbability,
+      twelveHour.stormProbability,
+      twentyFourHour.stormProbability
+    );
+    if (maxProb >= 0.9 && !hasZoomedToCambridge.current) {
+      hasZoomedToCambridge.current = true;
+      setActiveModule('BRIDGE');
+      setFocusedBody('Earth');
+      setTimeout(() => {
+        setSurfaceMode(true);
+        setViewingLocation(homeStation);
+        setStormBannerVisible(true);
+      }, 1500);
+    }
+    // Reset latch when probability drops below threshold so future crossings can fire again
+    if (maxProb < 0.9) {
+      hasZoomedToCambridge.current = false;
+    }
+  }, [lstmForecast, homeStation]);
   
   // Use live data if available, otherwise fall back to old data
   // Priority: simulation > live > old aurora data
@@ -361,6 +437,13 @@ function AppInner() {
                     onVehicleBoard={setBoardedVehicle}
                     controlsRef={controlsRef}
                     showConstellations={showConstellations}
+                    userLocation={homeStation}
+                    onEarthClick={(coords: { lat: number; lon: number }) => {
+                      // Drop a Beacon: override the home station with a user-chosen point
+                      const beacon = { lat: coords.lat, lon: coords.lon, name: `Beacon ${coords.lat.toFixed(1)}°N ${coords.lon.toFixed(1)}°E` };
+                      setBeaconLocation(beacon);
+                      setFocusedBody('Earth');
+                    }}
                   />
                   
                   {/* v3.0 NEW: CME Particle System */}
@@ -745,6 +828,53 @@ function AppInner() {
               </div>
             </div>
           )}
+
+          {/* v3.16: LSTM 90% Severity Storm Banner — auto-zooms to Home Station */}
+          {stormBannerVisible && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[80] pointer-events-auto">
+              <div className="flex items-center gap-3 px-5 py-3 rounded-lg backdrop-blur-md bg-red-900/70 border border-red-500/70 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse">
+                <span className="text-red-300 text-lg">🚨</span>
+                <div className="text-sm font-['Rajdhani'] text-red-200 tracking-wide">
+                  <span className="font-bold text-red-100">WOLF-SIGMA ALERT</span>
+                  {' — '}LSTM forecast: ≥90% storm probability. Camera locked to{' '}
+                  <span className="text-red-100 font-bold">{homeStation.name}</span>.
+                </div>
+                <button
+                  onClick={() => setStormBannerVisible(false)}
+                  className="ml-2 text-red-400 hover:text-red-200 text-lg leading-none transition-colors"
+                  aria-label="Dismiss alert"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* v3.17: Ground Station status + Beacon info — bottom-left corner */}
+          {activeModule === 'BRIDGE' && !surfaceMode && !boardedVehicle && (
+            <div className="absolute bottom-20 left-4 z-[60] pointer-events-auto">
+              <div className="flex flex-col gap-1.5">
+                {/* Geo status pill */}
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[11px] font-mono backdrop-blur-sm border ${geoPermission === 'granted' ? 'bg-green-900/50 border-green-500/40 text-green-300' : 'bg-amber-900/50 border-amber-500/40 text-amber-300'}`}>
+                  <span>{geoPermission === 'granted' ? '📡' : '⚓'}</span>
+                  <span className="uppercase tracking-wide">{homeStation.name}</span>
+                  <span className="text-gray-500">{homeStation.lat.toFixed(1)}° {homeStation.lon.toFixed(1)}°</span>
+                </div>
+                {/* Beacon hint */}
+                {beaconLocation && (
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-md text-[10px] font-mono bg-cyan-900/50 border border-cyan-500/30 text-cyan-400">
+                    <span>⊕</span>
+                    <span>Custom Beacon Active</span>
+                    <button
+                      onClick={() => setBeaconLocation(null)}
+                      className="ml-auto text-cyan-600 hover:text-cyan-300"
+                      title="Clear beacon — revert to GPS / Cambridge"
+                    >✕</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           
           {/* Heimdall Protocol Warning */}
           <div className="absolute inset-0 z-50 pointer-events-none">
@@ -854,6 +984,8 @@ function AppInner() {
             <NeuralLink
               planets={PLANETS}
               cities={CITIES}
+              homeStation={homeStation}
+              geoPermission={geoPermission}
               onSelect={(item, type) => {
                 if (type === 'planet') {
                   handleTravel(item.name);
