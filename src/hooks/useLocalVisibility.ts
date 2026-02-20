@@ -25,8 +25,8 @@ interface VisibilityResult {
   isDark: boolean;
 }
 
-// Mock API key - replace with real OpenWeatherMap key
-const OPENWEATHER_API_KEY = 'YOUR_API_KEY_HERE';
+// Read from .env — set VITE_OPENWEATHER_API_KEY in your .env file (see .env.example)
+const OPENWEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY as string | undefined;
 
 export function useLocalVisibility(lat: number, lon: number): VisibilityResult {
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -38,40 +38,34 @@ export function useLocalVisibility(lat: number, lon: number): VisibilityResult {
       try {
         setIsLoading(true);
         
-        // For now, use mock data since we don't have a real API key
-        // In production, uncomment this:
-        /*
-        const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
-        );
-        
-        if (!response.ok) {
-          throw new Error('Weather API request failed');
+        if (OPENWEATHER_API_KEY) {
+          // Live path — only runs when VITE_OPENWEATHER_API_KEY is set in .env
+          const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
+          );
+          if (!response.ok) throw new Error('Weather API request failed');
+          const data = await response.json();
+          setWeather({
+            cloudCover: data.clouds.all,
+            visibility: data.visibility,
+            temperature: data.main.temp,
+            conditions: data.weather[0].description,
+            icon: data.weather[0].icon,
+            sunrise: data.sys.sunrise,
+            sunset: data.sys.sunset
+          });
+        } else {
+          // No API key — graceful mock for development
+          setWeather({
+            cloudCover: Math.random() * 100,
+            visibility: 10000 + Math.random() * 10000,
+            temperature: -5 + Math.random() * 10,
+            conditions: 'clear sky (mock)',
+            icon: '01n',
+            sunrise: Date.now() / 1000 - 43200,
+            sunset: Date.now() / 1000 - 3600
+          });
         }
-        
-        const data = await response.json();
-        
-        setWeather({
-          cloudCover: data.clouds.all,
-          visibility: data.visibility,
-          temperature: data.main.temp,
-          conditions: data.weather[0].description,
-          icon: data.weather[0].icon,
-          sunrise: data.sys.sunrise,
-          sunset: data.sys.sunset
-        });
-        */
-
-        // Mock data for development
-        setWeather({
-          cloudCover: Math.random() * 100,
-          visibility: 10000 + Math.random() * 10000,
-          temperature: -5 + Math.random() * 10,
-          conditions: 'clear sky',
-          icon: '01n',
-          sunrise: Date.now() / 1000 - 43200, // 12 hours ago
-          sunset: Date.now() / 1000 - 3600 // 1 hour ago
-        });
 
         setError(null);
       } catch (err) {
