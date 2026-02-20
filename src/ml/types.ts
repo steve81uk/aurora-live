@@ -127,17 +127,18 @@ export interface GroundTruth {
   timestamp: Date;
 }
 
-/**
- * Feature vector for LSTM input (normalized)
+ /**
+ * Feature vector for LSTM input (normalized to Sköll-Track Gen-2)
  */
 export interface FeatureVector {
-  // Time series features (24h history, 1-hour intervals = 24 values each)
-  solarWindSpeed: number[];      // Last 24 hours
-  solarWindDensity: number[];
-  magneticFieldBz: number[];
-  magneticFieldBt: number[];
-  
-  // Derived physics features
+  // Primary Time series features (24h history)
+  solarWindSpeed: number[];      // Python: speed
+  solarWindDensity: number[];    // Python: density
+  magneticFieldBt: number[];     // Python: bt
+  magneticFieldBz: number[];     // Python: bz
+  kpIndex: number[];             // Python: kp (The 5th Pillar)
+
+  // Secondary/Derived features (Keep these for HUD metadata/logic)
   newellCouplingHistory: number[];
   alfvenVelocityHistory: number[];
   

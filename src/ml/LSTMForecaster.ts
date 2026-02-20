@@ -35,9 +35,9 @@ export class LSTMForecaster {
   };
   
   constructor() {
-    this.initializeModel();
+    this.loadPretrainedWeights(); // Auto-load the 50-year brain on startup
   }
-  
+
   /**
    * Build LSTM architecture inspired by Carrington Event math
    * 
@@ -125,20 +125,19 @@ export class LSTMForecaster {
   }
   
   /**
-   * Normalize feature vector using learned statistics
+   * Normalize feature vector using learned statistics (Matched to Sköll-Track Gen-2)
    */
   private normalizeFeatures(features: FeatureVector): number[][] {
     const normalized: number[][] = [];
     
-    // Each timestep becomes a row [speed, density, Bz, Bt, Newell, Alfvén]
+    // Each timestep is: [speed, density, bt, bz, kp] 
     for (let t = 0; t < 24; t++) {
       normalized.push([
-        (features.solarWindSpeed[t] - this.normalizationParams.solarWindSpeed.mean) / this.normalizationParams.solarWindSpeed.std,
-        (features.solarWindDensity[t] - this.normalizationParams.solarWindDensity.mean) / this.normalizationParams.solarWindDensity.std,
-        (features.magneticFieldBz[t] - this.normalizationParams.magneticFieldBz.mean) / this.normalizationParams.magneticFieldBz.std,
-        (features.magneticFieldBt[t] - this.normalizationParams.magneticFieldBt.mean) / this.normalizationParams.magneticFieldBt.std,
-        (features.newellCouplingHistory[t] - this.normalizationParams.newellCoupling.mean) / this.normalizationParams.newellCoupling.std,
-        (features.alfvenVelocityHistory[t] - this.normalizationParams.alfvenVelocity.mean) / this.normalizationParams.alfvenVelocity.std,
+        (features.solarWindSpeed[t] - 450) / 120,
+        (features.solarWindDensity[t] - 7) / 5,
+        (features.magneticFieldBt[t] - 6) / 3,
+        (features.magneticFieldBz[t] - 0) / 5,
+        (features.kpIndex[t] - 2.5) / 1.8 // The 5th pillar added
       ]);
     }
     

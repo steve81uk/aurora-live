@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { Activity, Wind, Zap, TrendingUp, Radio, Eye } from 'lucide-react';
 import GridResilience from './GridResilience';
-import { NeuralForecasterCard } from './NeuralForecasterCard';
+import { NeuralForecasterCard } from './NeuralForecastCard';
 import { LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface BridgeModuleProps {

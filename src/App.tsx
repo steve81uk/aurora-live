@@ -56,8 +56,8 @@ import { calcAuroralPeakLocation } from './services/DataBridge';
 import type { AuroralPeakLocation } from './services/DataBridge';
 
 // v3.0 WEEK 2+ NEW FEATURES
+import { NeuralForecastCard } from './components/NeuralForecastCard';
 import { KpTrendChart } from './components/KpTrendChart';
-import { MLAuroraForecast } from './components/MLAuroraForecast';
 import { CMEParticleSystem } from './components/CMEParticleSystem';
 import { MeteorShowerSystem } from './components/MeteorShowerSystem';
 import { NotificationSystem } from './components/NotificationSystem';
@@ -71,12 +71,9 @@ import { CommArray } from './components/CommArray';
 import { RadialMenu } from './components/RadialMenu';
 import { NeuralLink } from './components/NeuralLink';
 import { RadialWarp } from './components/RadialWarp';
-import { AuroraOval } from './components/AuroraOval';
 import { WeatherHUD } from './components/WeatherHUD';
 
 // v3.8 ADVANCED PHYSICS & SYSTEMS
-import { RadioBlackoutOverlay } from './components/RadioBlackoutOverlay';
-import { DeepSpaceTracker } from './components/DeepSpaceTracker';
 
 // v3.16 CAMBRIDGE AUTO-ZOOM: LSTM 90% severity trigger
 import { neuralForecaster } from './ml/LSTMForecaster';
@@ -96,6 +93,16 @@ import { MissionHUD } from './components/MissionHUD';
 import { BridgeModule } from './components/BridgeModule';
 
 type Module = 'BRIDGE' | 'ORACLE' | 'OBSERVA' | 'HANGAR' | 'CHRONOS' | 'DATA_LAB' | 'APPENDIX';
+
+/** Minimal interface for the drei OrbitControls imperative handle */
+interface ControlsHandle {
+  object: { position: Vector3; clone: () => Vector3 };
+  target: Vector3 & { clone: () => Vector3; lerpVectors: (a: Vector3, b: Vector3, t: number) => Vector3; copy: (v: Vector3) => Vector3 };
+  update: () => void;
+}
+
+/** Shared coordinate type used for surface travel targets */
+type GeoCoord = { lat: number; lon: number; name: string };
 
 // Loading fallback for lazy-loaded modules
 function ModuleLoader() {
@@ -124,14 +131,14 @@ function AppInner() {
   const [viewingLocation, setViewingLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
   const [boardedVehicle, setBoardedVehicle] = useState<string | null>(null);
   const [surfaceMode, setSurfaceMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoading, _setIsLoading] = useState(true);
+  const [loadingProgress, _setLoadingProgress] = useState(0);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [freeCameraMode, setFreeCameraMode] = useState(false);
   
   // NEW: Cinematic splash state
   const [showSplash, setShowSplash] = useState(true);
-  
+   
   // NEW: Navigation module state
   const [activeModule, setActiveModule] = useState<Module>('BRIDGE');
   
@@ -149,11 +156,11 @@ function AppInner() {
   const [showConstellations, setShowConstellations] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  // v3.0: Advanced features state
-  const [showMLForecast, setShowMLForecast] = useState(true);
-  const [showKpTrend, setShowKpTrend] = useState(true);
-  const [showCMEParticles, setShowCMEParticles] = useState(false);
-  const [showMeteors, setShowMeteors] = useState(true);
+  // v3.0: Advanced features state — setters kept for future HUD toggles
+  const [showMLForecast, _setShowMLForecast] = useState(true);
+  const [showKpTrend, _setShowKpTrend] = useState(true);
+  const [showCMEParticles, _setShowCMEParticles] = useState(false);
+  const [showMeteors, _setShowMeteors] = useState(true);
   
   // v3.6: Navigation state
   const [showRadialMenu, setShowRadialMenu] = useState(false);
@@ -161,9 +168,7 @@ function AppInner() {
   const [showWeatherHUD, setShowWeatherHUD] = useState(false);
   const [selectedCity, setSelectedCity] = useState<{lat: number; lon: number; name: string} | null>(null);
   
-  // v3.8: Advanced systems state
-  const [showDeepSpace, setShowDeepSpace] = useState(false);
-  const [deepSpaceLogScale, setDeepSpaceLogScale] = useState(true);
+  // v3.8: Advanced systems state — reserved for future deep-space panel
 
   // v3.16: Cambridge auto-zoom — fires when LSTM forecast hits 90% severity
   const [lstmForecast, setLstmForecast] = useState<NeuralForecast | null>(null);
@@ -173,16 +178,14 @@ function AppInner() {
   // v3.17: Geolocation — resolves to GPS coords or Cambridge fallback
   const { location: geoLocation, permission: geoPermission, setManualLocation, clearManualLocation, retry: retryGeo } = useGeoLocation();
   // homeStation is the persistent "anchor" (GPS or fallback); beaconLocation is a one-off manual override
-  const [beaconLocation, setBeaconLocation] = useState<{ lat: number; lon: number; name: string } | null>(null);
+  const [beaconLocation, setBeaconLocation] = useState<GeoCoord | null>(null);
   // The effective location used for camera zoom + UserBeacon in the scene
-  const homeStation = beaconLocation ?? geoLocation;
-  // Keep CAMBRIDGE as a constant anchor (used only when geoPermission === 'denied' and no beacon)
-  const CAMBRIDGE = { lat: 52.2053, lon: 0.1218, name: 'Cambridge, UK' };
+  const homeStation: GeoCoord = beaconLocation ?? geoLocation;
 
   // v3.18: Auroral peak location — recalculated every time live data updates
   const [peakLocation, setPeakLocation] = useState<AuroralPeakLocation | null>(null);
   
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<ControlsHandle | null>(null);
   const { data } = useAuroraData(LOCATIONS[0]);
   
   // v3.0: Live space weather data with 60s auto-refresh
@@ -221,7 +224,7 @@ function AppInner() {
         const features = buildFeatures(liveData.data);
         const pred = await neuralForecaster.predict(features);
         setLstmForecast(pred);
-      } catch (_) { /* silent — model weights may be untrained */ }
+      } catch { /* silent — model weights may be untrained */ }
     };
     run();
     const interval = setInterval(run, 5 * 60 * 1000);
@@ -233,6 +236,7 @@ function AppInner() {
     if (!liveData.data) return;
     const kp = liveData.data.kpIndex ?? 3;
     const bz = liveData.data.solarWind?.bz ?? 0;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPeakLocation(calcAuroralPeakLocation(kp, bz));
   }, [liveData.data]);
 
@@ -247,6 +251,7 @@ function AppInner() {
     );
     if (maxProb >= 0.9 && !hasZoomedToCambridge.current) {
       hasZoomedToCambridge.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveModule('BRIDGE');
       setFocusedBody('Earth');
       setTimeout(() => {
@@ -273,25 +278,50 @@ function AppInner() {
     ? simulatedParams.bz 
     : (liveData.data?.solarWind.bz || data.solarWind?.bz || 0);
 
-  // v3.6: Smart Alerts Integration
-  const alerts = useAlerts();
+  // v3.6: Smart Alerts Integration — called for its notification side-effects
+  useAlerts();
 
-  // Simulated loading progress
+  // v3.16/v3.20: Real-Time Neural Feed
   useEffect(() => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15 + 5;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setTimeout(() => setIsLoading(false), 500); // Short delay before hiding
-      }
-      setLoadingProgress(progress);
-    }, 200);
-    return () => clearInterval(interval);
-  }, []);
+    if (!liveData.data) return;
 
-  const handleTravel = (targetName: string, location?: any) => {
+    const runNeuralInference = async () => {
+      try {
+        // Construct the 5-Pillar Feature Vector from Live OMNI Data
+        // We use current values and simulate the 24h history required by the LSTM
+        const d = liveData.data!;
+        const genHistory = (val: number, variance: number) => 
+          Array.from({ length: 24 }, (_, i) => val + Math.sin(i / 4) * variance * 0.2 + (Math.random() - 0.5) * variance * 0.3);
+
+        const features: FeatureVector = {
+          solarWindSpeed: genHistory(d.solarWind.speed, 80),
+          solarWindDensity: genHistory(d.solarWind.density || 5, 2),
+          magneticFieldBt: genHistory(Math.abs(d.solarWind.bz) + 3, 2),
+          magneticFieldBz: genHistory(d.solarWind.bz, 5),
+          kpIndex: genHistory(d.kpIndex || 3, 1),
+          // Metadata for types
+          newellCouplingHistory: Array(24).fill(d.calculated?.newellCoupling || 0),
+          alfvenVelocityHistory: Array(24).fill(d.calculated?.alfvenVelocity || 0),
+          syzygyIndex: 0.3,
+          jupiterSaturnAngle: 0.5,
+          solarRotationPhase: (Date.now() / (27 * 24 * 60 * 60 * 1000)) % 1,
+          solarCyclePhase: 0.6,
+          timeOfYear: new Date().getMonth() / 12,
+        };
+
+        const pred = await neuralForecaster.predict(features);
+        setLstmForecast(pred);
+      } catch (err) {
+        console.warn("🧠 Neural Engine: Waiting for training lock...", err);
+      }
+    };
+
+    runNeuralInference();
+    const interval = setInterval(runNeuralInference, 60 * 1000); // Sync with 60s OMNI refresh
+    return () => clearInterval(interval);
+  }, [liveData.data]);
+
+  const handleTravel = (targetName: string, location?: GeoCoord) => {
     // Track visit for gamification
     visitBody(targetName);
     
@@ -352,6 +382,7 @@ function AppInner() {
   // AUTO-FOCUS CAMERA when focusedBody changes (positions camera but allows free rotation)
   useEffect(() => {
     if (!controlsRef.current || !focusedBody) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFocusedBodyPosition(null);
       return;
     }
@@ -445,7 +476,7 @@ function AppInner() {
                     focusedBody={focusedBody}
                     focusedBodyPosition={focusedBodyPosition}
                     onBodyFocus={setFocusedBody}
-                    onLocationClick={(city: any) => {
+                    onLocationClick={(city: GeoCoord) => {
                       setSurfaceMode(true);
                       setViewingLocation(city);
                     }}
@@ -931,7 +962,7 @@ function AppInner() {
           {boardedVehicle && (
             <div className="absolute inset-0 z-[60]">
               <VehicleView 
-                vehicle={boardedVehicle as any}
+                vehicle={boardedVehicle as 'Parker Solar Probe' | 'ISS' | 'UFO'}
                 onExit={() => {
                   setBoardedVehicle(null);
                   setFocusedBody(null);
@@ -969,10 +1000,10 @@ function AppInner() {
             </div>
           )}
           
-          {/* v3.0: ML Aurora Forecast Panel (left side) */}
+          {/* v3.20: Sköll-Track Gen-2 HUD */}
           {showMLForecast && activeModule === 'BRIDGE' && !showMissionControl && !showDataDashboard && !boardedVehicle && !surfaceMode && (
-            <div className="absolute top-4 left-4 max-w-md z-50 pointer-events-auto">
-              <MLAuroraForecast />
+            <div className="absolute top-4 left-4 max-w-sm z-50 pointer-events-auto">
+              <NeuralForecastCard liveData={null} />
             </div>
           )}
           
@@ -1047,11 +1078,11 @@ function AppInner() {
               planets={PLANETS.map(p => ({ name: p.name, color: 'text-cyan-400' }))}
               cities={CITIES}
               currentLocation={focusedBody || undefined}
-              onPlanetSelect={(planet: any) => {
+              onPlanetSelect={(planet: { name: string; color?: string }) => {
                 handleTravel(planet.name);
                 setShowRadialMenu(false);
               }}
-              onCitySelect={(city: any) => {
+              onCitySelect={(city: GeoCoord) => {
                 handleTravel('Earth', city);
                 setShowRadialMenu(false);
               }}

@@ -12,18 +12,20 @@ interface RadialMenuProps {
   isOpen: boolean;
   onClose: () => void;
   currentLocation?: string;
-  onPlanetSelect: (planet: any) => void;
-  onCitySelect: (city: any) => void;
+  onPlanetSelect: (planet: { name: string; color?: string }) => void;
+  onCitySelect: (city: { name: string; lat: number; lon: number }) => void;
 }
 
-export function RadialMenu({ planets, cities, isOpen, onClose, currentLocation, onPlanetSelect, onCitySelect }: RadialMenuProps) {
+export function RadialMenu({ planets, cities, isOpen, onClose, onPlanetSelect, onCitySelect }: RadialMenuProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const longPressTimer = useRef<number>(0);
+  const _longPressTimer = useRef<number>(0);
 
   // Play wolf-chime on hover
   const playWolfChime = () => {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioCtx = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     

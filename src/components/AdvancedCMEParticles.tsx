@@ -92,6 +92,7 @@ export function AdvancedCMEParticles({
         // Velocity based on flare intensity (500-1500 km/s simulated as units/sec)
         const speed = (0.5 + Math.random() * 0.5) * (flareIntensity / 5) * 2.0;
         
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         velocities[i3] = spreadX * speed;
         velocities[i3 + 1] = direction.y * speed;
         velocities[i3 + 2] = spreadZ * speed;

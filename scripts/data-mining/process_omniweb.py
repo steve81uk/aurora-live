@@ -61,10 +61,12 @@ class OmniWebProcessor:
                 delim_whitespace=True,
                 names=[
                     'year', 'day', 'hour',
-                    'bt', 'bx', 'by', 'bz',
-                    'speed', 'density', 'temperature',
-                    'kp', 'dst', 'mach_alfven'
+                    'bt', 'bz',           # Note: Your file skips Bx/By
+                    'density', 'speed',   # Note: Order is Density then Speed
+                    'mach_alfven',
+                    'kp', 'sunspot_r'
                 ],
+                usecols=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], # Ignore the garbage columns at the end
                 header=None,
                 comment='#'
             )
