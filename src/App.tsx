@@ -8,7 +8,8 @@ import * as THREE from 'three';
 import { getBodyPosition, getOptimalViewDistance, calculateCameraPosition } from './utils/astronomy';
 
 // IMPORTS MUST MATCH EXPORTS
-import SolarSystemScene, { PLANETS, CITIES } from './components/SolarSystemScene';
+import SolarSystemScene, { PLANETS } from './components/SolarSystemScene';
+import { CITIES } from './constants/cities';
 import { UniverseBackground } from './components/UniverseBackground';
 import { QuickNav } from './components/QuickNav';
 import { TelemetryDeck } from './components/TelemetryDeck'; 
@@ -17,6 +18,7 @@ import { HUDOverlay } from './components/HUDOverlay';
 import LoadingScreen from './components/LoadingScreen';
 import KeyboardHelp from './components/KeyboardHelp';
 import { ShootingStars } from './components/ShootingStars';
+import VehicleView from './components/VehicleView';
 
 function Loader() {
   return <Html center><div className="text-cyan-500 font-mono animate-pulse">INITIALIZING SYSTEM...</div></Html>;
@@ -151,7 +153,7 @@ export default function App() {
         {/* Top Bar */}
         <div className="flex justify-between items-start w-full pointer-events-auto">
            <QuickNav onTravel={handleTravel} planets={PLANETS} cities={CITIES} />
-           <HUDOverlay kpValue={data.kpIndex?.kpValue} windSpeed={data.solarWind?.speed} currentDate={currentDate} />
+           <HUDOverlay kpValue={data.kpIndex?.kpValue} windSpeed={data.solarWind?.speed} bz={data.solarWind?.bz} currentDate={currentDate} />
         </div>
 
         {/* Bottom Bar */}

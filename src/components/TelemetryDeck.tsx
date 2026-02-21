@@ -1,4 +1,10 @@
 import { Play, Pause, Rewind, FastForward, Calendar, SkipBack, SkipForward } from 'lucide-react';
+import { getAuroraEquatorwardBoundary } from '../utils/visibility';
+
+// Solar wind dynamic pressure: P_dyn = 1.67e-6 * n * v^2 (nPa)
+function calcDynPressure(density: number, speed: number): number {
+  return 1.67e-6 * density * speed * speed;
+}
 
 // CRITICAL: Must be 'export function', NOT 'export default function'
 export function TelemetryDeck({ 
@@ -8,7 +14,6 @@ export function TelemetryDeck({
   isPlaying, 
   setIsPlaying, 
   playbackSpeed, 
-  setPlaybackSpeed,
   onJumpToNow,
   onSkipHours,
   onSkipDays
@@ -27,7 +32,7 @@ export function TelemetryDeck({
     <div className="flex flex-col gap-4 text-cyan-400 font-mono text-xs p-4 bg-black/60 rounded-xl border border-cyan-900/30 backdrop-blur-md">
       
       {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-4 text-center">
+      <div className="grid grid-cols-5 gap-4 text-center">
         <div>
           <div className="text-gray-500 mb-1">KP INDEX</div>
           <div className={`text-xl font-bold ${kp > 5 ? "text-red-500" : "text-cyan-300"}`}>{kp.toFixed(1)}</div>
@@ -39,6 +44,14 @@ export function TelemetryDeck({
         <div>
           <div className="text-gray-500 mb-1">DENSITY</div>
           <div className="text-xl font-bold text-green-400">{density.toFixed(1)} <span className="text-xs">p/cm³</span></div>
+        </div>
+        <div>
+          <div className="text-gray-500 mb-1">DYN PRESSURE</div>
+          <div className="text-xl font-bold text-orange-400">{calcDynPressure(density, wind).toFixed(2)} <span className="text-xs">nPa</span></div>
+        </div>
+        <div>
+          <div className="text-gray-500 mb-1">AURORA ZONE</div>
+          <div className="text-xl font-bold text-purple-400">{'>'}{getAuroraEquatorwardBoundary(kp).toFixed(0)}<span className="text-xs">°</span></div>
         </div>
       </div>
 
@@ -57,47 +70,53 @@ export function TelemetryDeck({
         {/* Playback Controls */}
         <div className="flex gap-2 items-center">
           {/* Jump Back 24h */}
+          <span title="Jump back 24 hours">
           <SkipBack 
             className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
             onClick={() => onSkipDays(-1)}
-            title="Jump back 24 hours"
           />
+          </span>
           
           {/* Rewind 1h */}
+          <span title="Rewind 1 hour">
           <Rewind 
             className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
             onClick={() => onSkipHours(-1)}
-            title="Rewind 1 hour"
           />
+          </span>
           
           {/* Play/Pause */}
           {isPlaying ? (
+            <span title="Pause simulation">
             <Pause 
               className="w-5 h-5 cursor-pointer hover:text-white transition-colors text-cyan-400" 
               onClick={() => setIsPlaying(false)}
-              title="Pause simulation"
             />
+            </span>
           ) : (
+            <span title="Resume simulation">
             <Play 
               className="w-5 h-5 cursor-pointer hover:text-white transition-colors text-green-400" 
               onClick={() => setIsPlaying(true)}
-              title="Resume simulation"
             />
+            </span>
           )}
           
           {/* Fast Forward 1h */}
+          <span title="Fast forward 1 hour">
           <FastForward 
             className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
             onClick={() => onSkipHours(1)}
-            title="Fast forward 1 hour"
           />
+          </span>
           
           {/* Jump Forward 24h */}
+          <span title="Jump forward 24 hours">
           <SkipForward 
             className="w-4 h-4 cursor-pointer hover:text-white transition-colors" 
             onClick={() => onSkipDays(1)}
-            title="Jump forward 24 hours"
           />
+          </span>
           
           {/* Divider */}
           <div className="w-px h-4 bg-white/20 mx-1" />

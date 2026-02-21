@@ -99,6 +99,18 @@ export function getOptimalViewingTime(_location: Location, date: Date): Date {
 }
 
 /**
+ * Returns the equatorward boundary of the auroral oval in geomagnetic latitude degrees.
+ * Based on NOAA Kp-to-latitude mapping: boundary ≈ 66° - (Kp × 2°)
+ *
+ * @param kp - Planetary Kp index (0-9)
+ * @returns Equatorward boundary latitude in degrees
+ */
+export function getAuroraEquatorwardBoundary(kp: number): number {
+  return Math.max(50, 66 - kp * 2);
+}
+
+
+/**
  * Combines Kp and magnetic latitude to produce a complete visibility assessment.
  * 
  * @param kp - Planetary Kp index (0-9)

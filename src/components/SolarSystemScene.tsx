@@ -101,7 +101,7 @@ function ParkerSolarProbe({ onBodyFocus, focusedBody, onVehicleBoard }: { onBody
 }
 
 function OrbitTrail({ body, color }: any) {
-  const points = useMemo(() => {
+  const lineObject = useMemo(() => {
     const p = [];
     const now = new Date();
     for (let i = 0; i < 365; i += 5) {
@@ -109,20 +109,18 @@ function OrbitTrail({ body, color }: any) {
       const vec = Astronomy.HelioVector(body, Astronomy.MakeTime(date));
       p.push(new THREE.Vector3(vec.x * AU_TO_SCREEN_UNITS, vec.y * AU_TO_SCREEN_UNITS, vec.z * AU_TO_SCREEN_UNITS));
     }
-    return new THREE.BufferGeometry().setFromPoints(p);
-  }, [body]);
+    const geometry = new THREE.BufferGeometry().setFromPoints(p);
+    const material = new THREE.LineBasicMaterial({ color: color || 'white', opacity: 0.15, transparent: true });
+    return new THREE.Line(geometry, material);
+  }, [body, color]);
 
-  return (
-    <line geometry={points}>
-      <lineBasicMaterial color={color || 'white'} opacity={0.15} transparent />
-    </line>
-  );
+  return <primitive object={lineObject} />;
 }
 
 // ... MoonSystem & OrbitingMoon (Keep same as before, omitted for brevity but include in file) ...
 // (I will assume you have the MoonSystem code from previous step, if not I can paste it)
 
-function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus, focusedBody }: any) {
+function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus, focusedBody, onVehicleBoard }: any) {
   const groupRef = useRef<THREE.Group>(null);
   const earthMeshRef = useRef<THREE.Mesh>(null);
   const cloudsRef = useRef<THREE.Mesh>(null);
@@ -153,7 +151,6 @@ function EarthGroup({ config, kpValue, currentDate, onLocationClick, onBodyFocus
       // The Sun is at origin [0,0,0], Earth orbits around it
       
       // Get Earth's current position relative to Sun
-      const earthToSun = new THREE.Vector3(0, 0, 0).sub(groupRef.current.position).normalize();
       
       // Calculate the angle Earth needs to rotate so that noon (12:00 UTC) at Greenwich (0° lon) faces the Sun
       // At UTC noon, Greenwich should face the Sun
@@ -306,7 +303,7 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
     ? useLoader(TextureLoader, 'textures/2k_saturn_ring_alpha.png')
     : null;
 
-  useFrame(({clock}) => {
+  useFrame(() => {
     if (groupRef.current) {
       const astroTime = Astronomy.MakeTime(currentDate);
       const helio = Astronomy.HelioVector(config.body, astroTime);
@@ -343,7 +340,7 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
 
       <mesh castShadow receiveShadow>
         <sphereGeometry args={[config.radius, 32, 32]} />
-        <meshStandardMaterial map={texture} />
+        <meshStandardMaterial map={texture as THREE.Texture} />
       </mesh>
       
       {/* Saturn Rings */}
@@ -414,7 +411,7 @@ function TexturedPlanet({ config, currentDate, focusedBody, focusedBodyPosition,
   );
 }
 
-export default function SolarSystemScene({ kpValue, currentDate = new Date(), focusedBody, focusedBodyPosition, onBodyFocus, controlsRef, onLocationClick, onVehicleBoard }: any) {
+export default function SolarSystemScene({ kpValue, currentDate = new Date(), focusedBody, focusedBodyPosition, onBodyFocus, onLocationClick, onVehicleBoard }: any) {
   return (
     <>
       <RealisticSun onBodyFocus={onBodyFocus} />
