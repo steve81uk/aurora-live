@@ -21,6 +21,8 @@ export default function OperatorConsole() {
   const { data: swpcData } = useSWPC();
   const [visible, setVisible] = useState(true);
 
+  const windows: AuroraWindow[] = useAuroraWindows();
+
   // toggle visibility on 'O' key
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -63,8 +65,6 @@ export default function OperatorConsole() {
     bzNT: spaceState?.solar.solarWind.bz,
   };
   const alerts: AlertStack = buildAlertStack(alertInput);
-
-  const windows: AuroraWindow[] = useAuroraWindows();
 
   return (
     <div className="fixed inset-0 bg-black text-white overflow-hidden z-50">

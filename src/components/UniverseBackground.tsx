@@ -1,15 +1,19 @@
-import { useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { TextureLoader, BackSide, Points, ShaderMaterial, AdditiveBlending } from 'three';
-import { useLoader } from '@react-three/fiber';
+import { TextureLoader, BackSide, Points, ShaderMaterial, AdditiveBlending, Texture } from 'three';
 
 export function UniverseBackground() {
-  let texture = null;
-  try {
-    texture = useLoader(TextureLoader, '/textures/2k_stars_milky_way.jpg');
-  } catch (e) {
-    console.warn("Milky Way texture failed.");
-  }
+  const [texture, setTexture] = useState<Texture | null>(null);
+
+  useEffect(() => {
+    const loader = new TextureLoader();
+    loader.load(
+      '/textures/2k_stars_milky_way.jpg',
+      (tex) => setTexture(tex),
+      undefined,
+      () => console.warn("Milky Way texture failed.")
+    );
+  }, []);
 
   return (
     <group>

@@ -1,7 +1,7 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { SatGroup, SatelliteState } from '../services/CelesTrakService';
+import type { SatGroup } from '../services/CelesTrakService';
 import { useConstellation } from '../services/CelesTrakService';
 
 interface SatelliteTrackerProps {
@@ -32,8 +32,23 @@ const GROUP_COLORS: Record<SatGroup, string> = {
 };
 
 export function SatelliteTracker({ earthPosition, earthRadius = 1 }: SatelliteTrackerProps) {
-  const groups: SatGroup[] = ['crewed','starlink','gps','weather','science','debris','military'];
-  const allSats = useMemo(() => groups.map(g => ({ group: g, hook: useConstellation(g, 100) })), []);
+  const crewedHook = useConstellation('crewed', 100);
+  const starlinkHook = useConstellation('starlink', 100);
+  const gpsHook = useConstellation('gps', 100);
+  const weatherHook = useConstellation('weather', 100);
+  const scienceHook = useConstellation('science', 100);
+  const debrisHook = useConstellation('debris', 100);
+  const militaryHook = useConstellation('military', 100);
+
+  const allSats = [
+    { group: 'crewed' as SatGroup, hook: crewedHook },
+    { group: 'starlink' as SatGroup, hook: starlinkHook },
+    { group: 'gps' as SatGroup, hook: gpsHook },
+    { group: 'weather' as SatGroup, hook: weatherHook },
+    { group: 'science' as SatGroup, hook: scienceHook },
+    { group: 'debris' as SatGroup, hook: debrisHook },
+    { group: 'military' as SatGroup, hook: militaryHook },
+  ];
 
   // keep previous positions for simple animation
   const meshRefs = useRef<Map<string, THREE.Mesh>>(new Map());

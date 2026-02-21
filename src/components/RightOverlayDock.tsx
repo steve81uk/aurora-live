@@ -226,6 +226,7 @@ export default function RightOverlayDock() {
 function LiveTelemetryPanel() {
   const { spaceState } = useSpaceState();
   const { data: swpc } = useSWPC();
+  const windows = useAuroraWindows();
 
   if (!spaceState) {
     return <div className="text-cyan-400/40 font-mono text-xs text-center py-6">Loading telemetry...</div>;
@@ -235,7 +236,6 @@ function LiveTelemetryPanel() {
   const sat = spaceState.satellites;
   const protonFlux = swpc?.proton?.flux_10MeV ?? 0;
   const issDose = protonFlux * 0.0001; // arbitrary scaling to mSv/hr
-  const windows = useAuroraWindows();
   const dragMult = 1 + (spaceState.solar?.kpIndex ?? 0) * 0.1;
 
   const params = [
