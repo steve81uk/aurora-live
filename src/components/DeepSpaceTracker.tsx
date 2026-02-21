@@ -1,12 +1,13 @@
 /**
  * DeepSpaceTracker - Tracks Voyager 1/2 and New Horizons
- * Uses NASA Horizons API simulation (real API integration TODO)
+ * Positions now driven by DataBridge/Horizons API (mocked), with live distances
  */
 
 import { useEffect, useState, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { fetchHorizons } from '../services/DataBridge';
 
 interface DeepSpaceProbe {
   name: string;
@@ -56,48 +57,44 @@ export function DeepSpaceTracker({
   useEffect(() => {
     if (!enabled) return;
 
-    // Calculate real positions (simplified, not actual orbital mechanics)
-    // In production, use NASA Horizons API: https://ssd.jpl.nasa.gov/horizons/
-    const v1Angle = Math.PI * 0.6; // Approximate direction
-    const v2Angle = Math.PI * 1.2;
-    const nhAngle = Math.PI * 0.3;
+    // asynchronous update using Horizons-derived state
+    const updateProbes = async () => {
+      try {
+        const data = await fetchHorizons();
+        const v1info = data.satellites?.voyager1;
+        const v2info = data.satellites?.voyager2;
+        const nhinfo = data.satellites?.newHorizons;
 
-    const scale = logarithmicScale ? 10 : 1; // Compress distances for visibility
+        const v1Angle = Math.PI * 0.6; // keep earlier approximate directions
+        const v2Angle = Math.PI * 1.2;
+        const nhAngle = Math.PI * 0.3;
+        const scale = logarithmicScale ? 10 : 1;
 
-    setProbes([
-      {
-        ...probes[0],
-        position: new THREE.Vector3(
-          Math.cos(v1Angle) * probes[0].distance / scale,
-          5,
-          Math.sin(v1Angle) * probes[0].distance / scale
-        )
-      },
-      {
-        ...probes[1],
-        position: new THREE.Vector3(
-          Math.cos(v2Angle) * probes[1].distance / scale,
-          -3,
-          Math.sin(v2Angle) * probes[1].distance / scale
-        )
-      },
-      {
-        ...probes[2],
-        position: new THREE.Vector3(
-          Math.cos(nhAngle) * probes[2].distance / scale,
-          2,
-          Math.sin(nhAngle) * probes[2].distance / scale
-        )
+        setProbes(prev => prev.map((probe, idx) => {
+          let dist = probe.distance;
+          if (idx === 0 && v1info?.distance) dist = v1info.distance;
+          if (idx === 1 && v2info?.distance) dist = v2info.distance;
+          if (idx === 2 && nhinfo?.distance) dist = nhinfo.distance;
+          const angle = idx === 0 ? v1Angle : idx === 1 ? v2Angle : nhAngle;
+          const y = idx === 0 ? 5 : idx === 1 ? -3 : 2;
+          return {
+            ...probe,
+            distance: dist,
+            velocity: idx === 0 ? v1info?.velocity ?? probe.velocity : idx === 1 ? v2info?.velocity ?? probe.velocity : nhinfo?.velocity ?? probe.velocity,
+            lightTime: idx === 0 ? v1info?.signalDelay ?? probe.lightTime : idx === 1 ? v2info?.signalDelay ?? probe.lightTime : nhinfo?.signalDelay ?? probe.lightTime,
+            position: new THREE.Vector3(
+              Math.cos(angle) * dist / scale,
+              y,
+              Math.sin(angle) * dist / scale
+            )
+          };
+        }));
+      } catch (e) {
+        console.warn('Failed to fetch deep space probe positions', e);
       }
-    ]);
+    };
 
-    // TODO: Implement real API fetching
-    // const fetchProbePositions = async () => {
-    //   const response = await fetch('https://ssd.jpl.nasa.gov/api/horizons...');
-    //   const data = await response.json();
-    //   // Parse and update probe positions
-    // };
-    // fetchProbePositions();
+    updateProbes();
   }, [enabled, logarithmicScale]);
 
   // Flicker animation for faint signals

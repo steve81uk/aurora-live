@@ -120,7 +120,7 @@
 - **Advanced exports** require "Fuel the Wolf" donation (honor system)
 
 ### Deep Space
-- **Enable** via settings toggle (TODO: add to UI)
+- **Enable** via settings toggle (now present in top‑bar)
 - **Voyager 1** at 164.7 AU (22.8h signal delay)
 - **Voyager 2** at 137.4 AU (19.0h delay)
 - **Logarithmic scale** compresses 160+ AU to fit screen

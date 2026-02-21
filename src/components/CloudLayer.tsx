@@ -28,26 +28,30 @@ export function CloudLayer({
   const defaultClouds = useLoader(TextureLoader, '/textures/8k_earth_clouds.jpg');
 
   useEffect(() => {
-    // TODO: Fetch live cloud data from NASA GIBS or OpenWeatherMap VPR API
-    // For now, use the static texture
-    setCloudTexture(defaultClouds);
-    
-    // Future implementation:
-    // const fetchLiveClouds = async () => {
-    //   try {
-    //     const response = await fetch('https://api.openweathermap.org/vpr/...');
-    //     const data = await response.json();
-    //     // Convert raster data to texture
-    //     const texture = generateTextureFromRaster(data);
-    //     setCloudTexture(texture);
-    //   } catch (error) {
-    //     console.warn('Failed to fetch live clouds, using default');
-    //     setCloudTexture(defaultClouds);
-    //   }
-    // };
-    // fetchLiveClouds();
-    // const interval = setInterval(fetchLiveClouds, 10 * 60 * 1000); // 10 min
-    // return () => clearInterval(interval);
+    // Try loading a live cloud tile from OpenWeather if API key is present
+    const loadLiveClouds = async () => {
+      const key = import.meta.env.VITE_OPENWEATHER_API_KEY;
+      if (key) {
+        try {
+          const zoom = 2;
+          const x = 1;
+          const y = 1;
+          const url = `https://tile.openweathermap.org/map/clouds_new/${zoom}/${x}/${y}.png?appid=${key}`;
+          const loader = new TextureLoader();
+          const tex = await loader.loadAsync(url);
+          setCloudTexture(tex);
+          return;
+        } catch (err) {
+          console.warn('Failed to fetch OpenWeather cloud tile, falling back', err);
+        }
+      }
+      // fallback to static
+      setCloudTexture(defaultClouds);
+    };
+
+    loadLiveClouds();
+    const interval = setInterval(loadLiveClouds, 10 * 60 * 1000); // refresh every 10 minutes
+    return () => clearInterval(interval);
   }, [defaultClouds]);
 
   // Rotate clouds slightly faster than Earth for realism

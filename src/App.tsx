@@ -50,6 +50,7 @@ import { useLiveSpaceWeather } from './hooks/useLiveSpaceWeather';
 
 // v3.17 GEOLOCATION
 import { useGeoLocation } from './hooks/useGeoLocation';
+import type { GeoLocation } from './hooks/useGeoLocation';
 
 // v3.18 PEAK VIEW
 import { calcAuroralPeakLocation } from './services/DataBridge';
@@ -61,6 +62,7 @@ import { KpTrendChart } from './components/KpTrendChart';
 import { CMEParticleSystem } from './components/CMEParticleSystem';
 import { MeteorShowerSystem } from './components/MeteorShowerSystem';
 import { NotificationSystem } from './components/NotificationSystem';
+import { DataStatusBanner } from './components/DataStatusBanner';
 
 // v3.4 DONATION & FEATURES
 import { FuelCell } from './components/FuelCell';
@@ -72,12 +74,16 @@ import { RadialMenu } from './components/RadialMenu';
 import { NeuralLink } from './components/NeuralLink';
 import { RadialWarp } from './components/RadialWarp';
 import { WeatherHUD } from './components/WeatherHUD';
+import OperatorConsole from './components/OperatorConsole';
 
 // v3.8 ADVANCED PHYSICS & SYSTEMS
+import { DeepSpaceTracker } from './components/DeepSpaceTracker';
+import { RadioBlackoutOverlay } from './components/RadioBlackoutOverlay';
+import { useSWPC } from './services/SWPCDataService';
 
 // v3.16 CAMBRIDGE AUTO-ZOOM: LSTM 90% severity trigger
 import { neuralForecaster } from './ml/LSTMForecaster';
-import type { NeuralForecast } from './ml/types';
+import type { NeuralForecast, FeatureVector } from './ml/types';
 
 // v3.6 HOOKS
 import { useAlerts } from './hooks/useAlerts';
@@ -102,7 +108,7 @@ interface ControlsHandle {
 }
 
 /** Shared coordinate type used for surface travel targets */
-type GeoCoord = { lat: number; lon: number; name: string };
+type GeoCoord = { lat: number; lon: number; name: string; isUserLocation?: boolean };
 
 // Loading fallback for lazy-loaded modules
 function ModuleLoader() {
@@ -121,6 +127,8 @@ function Loader() {
 
 // Inner component that uses GameContext
 function AppInner() {
+  // show data error/status banner
+  const banner = <DataStatusBanner />;
   const { visitBody, checkAchievements } = useGame();
   // Use time simulation hook for real-time updates
   const timeSimulation = useTimeSimulation(new Date(), 1); // 1 = real-time speed
@@ -162,6 +170,10 @@ function AppInner() {
   const [showCMEParticles, _setShowCMEParticles] = useState(false);
   const [showMeteors, _setShowMeteors] = useState(true);
   
+  // v3.8: Advanced systems state — reserved for future deep-space panel
+  const [showDeepSpace, setShowDeepSpace] = useState(false);
+  const [showRadioBlackout, setShowRadioBlackout] = useState(true);
+
   // v3.6: Navigation state
   const [showRadialMenu, setShowRadialMenu] = useState(false);
   const [showRadialWarp, setShowRadialWarp] = useState(false);
@@ -180,7 +192,7 @@ function AppInner() {
   // homeStation is the persistent "anchor" (GPS or fallback); beaconLocation is a one-off manual override
   const [beaconLocation, setBeaconLocation] = useState<GeoCoord | null>(null);
   // The effective location used for camera zoom + UserBeacon in the scene
-  const homeStation: GeoCoord = beaconLocation ?? geoLocation;
+  const homeStation: GeoLocation = { ...(beaconLocation ?? geoLocation), isUserLocation: true };
 
   // v3.18: Auroral peak location — recalculated every time live data updates
   const [peakLocation, setPeakLocation] = useState<AuroralPeakLocation | null>(null);
@@ -190,6 +202,8 @@ function AppInner() {
   
   // v3.0: Live space weather data with 60s auto-refresh
   const liveData = useLiveSpaceWeather();
+  // SWPC stream for X-ray, proton, radio blackout status
+  const { data: swpcData } = useSWPC();
   
   // Detect mobile
   useEffect(() => {
@@ -210,6 +224,7 @@ function AppInner() {
         solarWindDensity: gen(d!.solarWind.density ?? 5, 3),
         magneticFieldBz: gen(d!.solarWind.bz, 4),
         magneticFieldBt: gen(Math.abs(d!.solarWind.bz) + 3, 2),
+        kpIndex: gen(d!.kpIndex ?? 3, 1),
         newellCouplingHistory: gen(0, 3000),
         alfvenVelocityHistory: gen(50, 20),
         syzygyIndex: 0.3,
@@ -221,7 +236,7 @@ function AppInner() {
     };
     const run = async () => {
       try {
-        const features = buildFeatures(liveData.data);
+        const features = buildFeatures(liveData.data!);
         const pred = await neuralForecaster.predict(features);
         setLstmForecast(pred);
       } catch { /* silent — model weights may be untrained */ }
@@ -300,8 +315,8 @@ function AppInner() {
           magneticFieldBz: genHistory(d.solarWind.bz, 5),
           kpIndex: genHistory(d.kpIndex || 3, 1),
           // Metadata for types
-          newellCouplingHistory: Array(24).fill(d.calculated?.newellCoupling || 0),
-          alfvenVelocityHistory: Array(24).fill(d.calculated?.alfvenVelocity || 0),
+          newellCouplingHistory: Array(24).fill(0),
+          alfvenVelocityHistory: Array(24).fill(50),
           syzygyIndex: 0.3,
           jupiterSaturnAngle: 0.5,
           solarRotationPhase: (Date.now() / (27 * 24 * 60 * 60 * 1000)) % 1,
@@ -442,6 +457,7 @@ function AppInner() {
       {/* MAIN APP */}
       {!showSplash && (
         <div className="relative w-screen h-screen overflow-hidden">
+          {banner}
           
           {/* LAYER 0: Canvas with conditional 3D scenes */}
           <Canvas
@@ -484,11 +500,13 @@ function AppInner() {
                     controlsRef={controlsRef}
                     showConstellations={showConstellations}
                     userLocation={homeStation}
+                    showDeepSpace={showDeepSpace}
+                    deepSpaceLogScale={true}
                     onEarthClick={(coords: { lat: number; lon: number }) => {
                       // Drop a Beacon: override the home station with a user-chosen point
                       const beacon = { lat: coords.lat, lon: coords.lon, name: `Beacon ${coords.lat.toFixed(1)}°N ${coords.lon.toFixed(1)}°E`, isUserLocation: true as const };
                       setBeaconLocation(beacon);
-                      setManualLocation(beacon); // persist to localStorage
+                      setManualLocation({ ...beacon, isUserLocation: true }); // persist to localStorage
                       setFocusedBody('Earth');
                     }}
                   />
@@ -503,6 +521,9 @@ function AppInner() {
                   
                   {/* v3.0 NEW: Meteor Showers */}
                   {showMeteors && <MeteorShowerSystem />}
+                  {/* Deep-space probes (Voyager/New Horizons) */}
+                  {showDeepSpace && <DeepSpaceTracker enabled={showDeepSpace} logarithmicScale={true} />}
+                  {/* End of conditional SolarSystemScene extras */}
                   
                   {/* AUDIO REMOVED: PlanetarySounds - Too overwhelming */}
                   {/* Replaced with Spotify embed in GoldenRecord component */}
@@ -510,7 +531,7 @@ function AppInner() {
                   {/* Orbit Controls (only in space view, disabled if free camera) */}
                   {!freeCameraMode && (
                     <OrbitControls 
-                      ref={controlsRef} 
+                      ref={controlsRef as any} 
                       enablePan={true} 
                       enableZoom={true}
                       enableDamping={true}
@@ -542,6 +563,14 @@ function AppInner() {
               )}
             </Suspense>
           </Canvas>
+
+          {/* radio blackout static/audio overlay */}
+          {showRadioBlackout && (
+            <RadioBlackoutOverlay
+              xrayFlux={swpcData?.xray?.classification || liveData.data?.solar?.xrayFlux || 'C1.0'}
+              active={swpcData?.radioBlackout?.active ?? false}
+            />
+          )}
 
           {/* LAYER 1: UI Overlay */}
           <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between">
@@ -669,6 +698,8 @@ function AppInner() {
           {/* LAYER 2: BRIDGE Module UI Elements */}
           {activeModule === 'BRIDGE' && (
             <>
+              {/* Operator Console always mounted when bridge active (internal O toggle) */}
+              <OperatorConsole />
               {/* MISSION CONTROL MODE (Full screen overlay) */}
               {showMissionControl && (
                 <div className="absolute inset-0 z-50 pointer-events-auto">
@@ -702,6 +733,26 @@ function AppInner() {
                       </div>
                     )}
                     
+                    {/* Deep-space / overlay toggles */}
+                    <div className="pointer-events-auto flex items-center gap-3 text-xs text-gray-300">
+                      <label className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={showDeepSpace}
+                          onChange={e => setShowDeepSpace(e.target.checked)}
+                        />
+                        Deep‑Space
+                      </label>
+                      <label className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={showRadioBlackout}
+                          onChange={e => setShowRadioBlackout(e.target.checked)}
+                        />
+                        Radio Blackout
+                      </label>
+                    </div>
+
                     {/* Fast Travel Dropdown */}
                     <div className="pointer-events-auto">
                       <FastTravelDropdown

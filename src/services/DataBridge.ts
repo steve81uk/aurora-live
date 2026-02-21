@@ -9,6 +9,9 @@ const API_KEYS = {
   nasa: import.meta.env.VITE_NASA_API_KEY
 };
 
+import { estimateDst, classifyMorphology, newellCoupling, borovskyCoupling, vasyliunasCoupling, estimateLag } from './SpaceMetricsService';
+import type { FeatureVector } from '../ml/types';
+
 const API_ENDPOINTS = {
   noaaSwpc: import.meta.env.VITE_NOAA_SWPC_URL || 'https://services.swpc.noaa.gov/json/',
   celestrak: import.meta.env.VITE_CELESTRAK_URL || 'https://celestrak.org/NORAD/elements/',
@@ -64,6 +67,11 @@ export interface SpaceState {
       velocity: number; // km/s
       signalDelay: number; // hours
     };
+    newHorizons?: {
+      distance: number; // AU
+      velocity: number; // km/s
+      signalDelay: number; // hours
+    };
   };
   magnetosphere: {
     kpCurrent: number;
@@ -83,6 +91,17 @@ export interface SpaceState {
     confidence: number;
     nextPeakTime: Date | null;
     anomalyDetected: boolean;
+  };
+  derived?: {
+    dstEstimate: number;
+    stormMorphology: import('./SpaceMetricsService').StormMorphology;
+    coupling: {
+      newell: number;
+      borovsky: number;
+      vasyliunas: number;
+    };
+    lagMs?: number;
+    gicRisk?: number;      // 0-1 proxy for GIC risk
   };
 }
 
@@ -188,7 +207,7 @@ async function fetchCelesTrak(): Promise<Partial<SpaceState>> {
 /**
  * Fetch NASA Horizons API data (Voyagers, planets)
  */
-async function fetchHorizons(): Promise<Partial<SpaceState>> {
+export async function fetchHorizons(): Promise<Partial<SpaceState>> {
   try {
     // Note: Horizons API requires specific query parameters
     // For production, implement proper queries for each body
@@ -312,6 +331,60 @@ function predictKpWithML(currentState: Partial<SpaceState>): SpaceState['ml'] {
 /**
  * Main DataBridge function - fetches all sources and combines
  */
+// internal history for derived metrics
+let _dstPrev = 0;
+let _windHistory: Array<{timestamp:number; speed:number; density:number; bz:number; bt:number}> = [];
+let _kpHistory: number[] = [];
+
+// exports for other modules (e.g. SDK) --------------------------------------------------
+export function getWindHistory() {
+  return _windHistory.slice();
+}
+
+export function getKpHistory() {
+  return _kpHistory.slice();
+}
+
+/**
+ * Build a feature vector suitable for ML forecasting from current internal history.
+ * This is a lightweight approximation used by the SDK when real historical storage
+ * isn't available.
+ */
+export function buildFeatureVector(): FeatureVector {
+  // ensure we have at least 24 points, pad with last value if necessary
+  const padArray = (arr: number[], len: number) => {
+    const out = arr.slice(-len);
+    while (out.length < len) {
+      out.unshift(out[0] ?? 0);
+    }
+    return out;
+  };
+
+  const speeds = padArray(_windHistory.map(h => h.speed), 24);
+  const densities = padArray(_windHistory.map(h => h.density), 24);
+  const bzs = padArray(_windHistory.map(h => h.bz), 24);
+  const bts = padArray(_windHistory.map(h => h.bt), 24);
+  const kps = padArray(_kpHistory, 24);
+
+  // coupling / alfven proxies
+  const newellHist = _windHistory.map(h => newellCoupling(h));
+  const alfvenHist = _windHistory.map(h => h.speed); // crude proxy
+  return {
+    solarWindSpeed: speeds,
+    solarWindDensity: densities,
+    magneticFieldBz: bzs,
+    magneticFieldBt: bts,
+    kpIndex: kps,
+    newellCouplingHistory: padArray(newellHist, 24),
+    alfvenVelocityHistory: padArray(alfvenHist, 24),
+    syzygyIndex: 0.3,
+    jupiterSaturnAngle: 0.5,
+    solarRotationPhase: (Date.now() / (27 * 24 * 60 * 60 * 1000)) % 1,
+    solarCyclePhase: 0.6,
+    timeOfYear: new Date().getMonth() / 12,
+  };
+}
+
 export async function fetchSpaceState(): Promise<SpaceState> {
   try {
     // Fetch all sources concurrently
@@ -349,6 +422,64 @@ export async function fetchSpaceState(): Promise<SpaceState> {
       ...noaaData,
       satellites,
       magnetosphere: noaaData.magnetosphere
+    };
+
+    // --- derived metrics --------------------------------------------------
+    const sw = { // single sample used for metrics
+      timestamp: Date.now(),
+      speed: merged.solar?.solarWind.speed || 0,
+      density: merged.solar?.solarWind.density || 0,
+      bz: merged.solar?.solarWind.bz || 0,
+      bt: merged.solar?.solarWind.bt || 0,
+    };
+
+    // maintain modest history (last 60 minutes)
+    _windHistory.push(sw);
+    if (_windHistory.length > 60) _windHistory.shift();
+
+    const currentKp = merged.solar?.kpIndex || 0;
+    _kpHistory.push(currentKp);
+    if (_kpHistory.length > 60) _kpHistory.shift();
+
+    // compute GIC risk proxy using |ΔBz| and Kp
+    let gicRisk = 0;
+    if (_windHistory.length >= 2) {
+      const prev = _windHistory[_windHistory.length - 2];
+      const dbz = Math.abs(sw.bz - prev.bz);
+      gicRisk = Math.min(1, (currentKp / 9) * (dbz / 10));
+    }
+
+    // estimate Dst using previous value and one-hour timestep
+    const dstEst = estimateDst(sw, _dstPrev, 1);
+    _dstPrev = dstEst;
+
+    // morphology classifier 
+    const morph = classifyMorphology(_windHistory.map(h => ({
+      timestamp: h.timestamp,
+      speed: h.speed,
+      density: h.density,
+      bz: h.bz,
+      bt: h.bt
+    })));
+
+    // coupling functions
+    const coupNewell    = newellCoupling(sw);
+    const coupBorovsky = borovskyCoupling(sw);
+    const coupVasy     = vasyliunasCoupling(sw);
+
+    // lag between speed history and Kp history (simple)
+    const lagMs = estimateLag(_windHistory.map(h => h.speed), _kpHistory);
+
+    merged.derived = {
+      dstEstimate: dstEst,
+      stormMorphology: morph,
+      coupling: {
+        newell: coupNewell,
+        borovsky: coupBorovsky,
+        vasyliunas: coupVasy,
+      },
+      lagMs,
+      gicRisk,
     };
 
     // Calculate aurora parameters

@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { Activity, Wind, Zap, TrendingUp, Radio, Eye } from 'lucide-react';
 import GridResilience from './GridResilience';
-import { NeuralForecasterCard } from './NeuralForecastCard';
+import { NeuralForecastCard } from './NeuralForecastCard';
 import { LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface BridgeModuleProps {
@@ -153,7 +153,7 @@ export function BridgeModule({
         <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-3rem)] pointer-events-auto scrollbar-thin scrollbar-thumb-cyan-900 scrollbar-track-transparent">
           
           {/* Neural Forecaster - LSTM ML Predictions (TOP PRIORITY) */}
-          <NeuralForecasterCard />
+          <NeuralForecastCard liveData={null} />
 
           {/* Fourier Harmonics */}
           <div className="backdrop-blur-md bg-black/40 border border-cyan-500/30 rounded-lg p-4 shadow-[0_0_20px_rgba(0,255,255,0.1)]">

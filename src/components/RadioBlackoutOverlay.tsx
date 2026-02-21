@@ -4,7 +4,6 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
-import { Howl } from 'howler';
 
 interface RadioBlackoutOverlayProps {
   xrayFlux: string; // e.g., 'M5.4', 'X1.2', 'C2.1'
@@ -14,7 +13,7 @@ interface RadioBlackoutOverlayProps {
 export function RadioBlackoutOverlay({ xrayFlux, active }: RadioBlackoutOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [intensity, setIntensity] = useState(0);
-  const [whiteNoiseAudio, setWhiteNoiseAudio] = useState<Howl | null>(null);
+  const [whiteNoiseAudio, setWhiteNoiseAudio] = useState<any>(null);
 
   // Parse X-ray flux intensity
   useEffect(() => {
@@ -47,31 +46,35 @@ export function RadioBlackoutOverlay({ xrayFlux, active }: RadioBlackoutOverlayP
     setIntensity(calculatedIntensity);
   }, [xrayFlux, active]);
 
-  // White noise audio
+  // White noise audio using WebAudio API directly
   useEffect(() => {
     if (active && intensity > 0 && !whiteNoiseAudio) {
-      // Create white noise with Howler
       try {
-        const audioContext = new AudioContext();
+        const audioContext = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
         const bufferSize = 2 * audioContext.sampleRate;
         const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
         const output = noiseBuffer.getChannelData(0);
-
         for (let i = 0; i < bufferSize; i++) {
           output[i] = Math.random() * 2 - 1;
         }
-
-        // Note: Howler doesn't support AudioBuffer directly
-        // So we'll skip the audio for now or use a pre-made white noise file
-        // For now, just a placeholder comment
-        // TODO: Add white-noise.mp3 to public/audio/ and load it here
+        const source = audioContext.createBufferSource();
+        source.buffer = noiseBuffer;
+        source.loop = true;
+        const gain = audioContext.createGain();
+        gain.gain.value = intensity * 0.2;
+        source.connect(gain).connect(audioContext.destination);
+        source.start();
+        setWhiteNoiseAudio({ audioContext, source, gain } as any);
       } catch (e) {
-        console.warn('Audio context not available');
+        console.warn('Audio context not available', e);
       }
     }
 
     if (!active || intensity === 0) {
-      whiteNoiseAudio?.stop();
+      if (whiteNoiseAudio && (whiteNoiseAudio as any).source) {
+        (whiteNoiseAudio as any).source.stop();
+        (whiteNoiseAudio as any).audioContext.close();
+      }
       setWhiteNoiseAudio(null);
     }
   }, [active, intensity, whiteNoiseAudio]);

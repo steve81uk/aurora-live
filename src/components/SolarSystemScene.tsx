@@ -1,163 +1,192 @@
-import { useRef, useState, useMemo, useEffect } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+/**
+ * SolarSystemScene — 3D Solar System Renderer
+ * Real-time planetary positions via astronomy-engine.
+ * Lazy-loaded heavy components for performance.
+ */
+
+import React, { useRef, useMemo, useState, Suspense, lazy } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import * as Astronomy from 'astronomy-engine';
-import { TextureLoader } from 'three';
-import { RealisticSun } from './RealisticSun';
+import OptimizedPlanet from './OptimizedPlanet';
 import { useLiveSpaceWeather } from '../hooks/useLiveSpaceWeather';
-import { SolarFlareParticles } from './SolarFlareParticles';
-// ... [Maintain all original imports JWST, Voyager1, TeslaRoadster, etc.] ...
+import { useDONKI } from '../services/DONKIService';
+import { useSpaceState } from '../services/DataBridge';
+import { SatelliteTracker } from './SatelliteTracker';
+import { OvationAuroraShell } from './OvationAuroraShell';
+import { SolarLighting } from './SolarLighting';
+import { DeepSpaceTracker } from './DeepSpaceTracker';
+import { PLANETS as PLANET_LIST } from '../data/celestial';
+import { getBodyPosition } from '../utils/astronomy';
 
-const AU_TO_SCREEN_UNITS = 40;
+// Lazy-load heavy visual components
+const RealisticSun  = lazy(() => import('./RealisticSun').then(m => ({ default: m.RealisticSun })));
+const AsteroidBelt  = lazy(() => import('./AsteroidBelt'));
+const TeslaRoadster = lazy(() => import('./TeslaRoadster'));
+const UFO           = lazy(() => import('./UFO'));
 
-// --- UPDATED GEOGRAPHIC MATH ---
-// This ensures your UserBeacon and city markers sit precisely on the 3D surface
 function latLonToVector3(lat: number, lon: number, radius: number) {
-  const phi = (90 - lat) * (Math.PI / 180);
+  const phi   = (90 - lat) * (Math.PI / 180);
   const theta = (lon + 180) * (Math.PI / 180);
-  const x = -(radius * Math.sin(phi) * Math.cos(theta));
-  const z = (radius * Math.sin(phi) * Math.sin(theta));
-  const y = (radius * Math.cos(phi));
-  return new THREE.Vector3(x, y, z);
+  return new THREE.Vector3(
+    -(radius * Math.sin(phi) * Math.cos(theta)),
+     (radius * Math.cos(phi)),
+     (radius * Math.sin(phi) * Math.sin(theta))
+  );
 }
 
-export default function SolarSystemScene({ 
-  kpValue, 
-  currentDate = new Date(), 
-  focusedBody, 
-  focusedBodyPosition, 
-  onBodyFocus, 
-  userLocation, // New Prop for Personal Mission Control
-  onVehicleBoard,
-  onEarthClick,  // Callback for Drop-a-Beacon
+export default function SolarSystemScene({
+  kpValue,
+  currentDate = new Date(),
+  focusedBody,
+  onBodyFocus,
+  userLocation,
+  onEarthClick,
+  showDeepSpace = false,
+  deepSpaceLogScale = false,
 }: any) {
   const liveData = useLiveSpaceWeather();
   const [magnetopauseImpact, setMagnetopauseImpact] = useState(false);
-  
-  // --- CHRONOS ENGINE: INTERNAL LOOP UPDATE ---
-  // We move MakeTime out of the loop and use useMemo to prevent re-calculations
-  const astroTime = useMemo(() => Astronomy.MakeTime(currentDate), [currentDate]);
+  const { events } = useDONKI();
+  const gicRisk = useSpaceState().spaceState?.derived?.gicRisk ?? 0;
+  const lastFlareTime = useRef<number>(0);
+  const flareScaleRef = useRef(1);
 
-  // Is the userLocation in the hemisphere currently facing the Sun?
-  // Approximate: positive lon means day side during solar noon.
+  const _astroTime = useMemo(() => Astronomy.MakeTime(currentDate), [currentDate]);
+
   const userInImpactedHemisphere = useMemo(() => {
     if (!userLocation) return false;
-    // Northern hemisphere (lat > 0) is roughly sunward during CME events originating on the equatorial plane
-    return userLocation.lat > -60; // most latitudes are impacted — exclude deep south
+    return userLocation.lat > -60;
   }, [userLocation]);
+
+  // effect: sun flare pulse based on DONKI events
+  useFrame((state) => {
+    const now = Date.now();
+    const latestFlare = events.find(e => e.type === 'FLR');
+    if (latestFlare) {
+      const tms = new Date(latestFlare.time).getTime();
+      if (tms > lastFlareTime.current) {
+        lastFlareTime.current = tms;
+        flareScaleRef.current = 1.5;
+      }
+    }
+    // decay back towards 1
+    flareScaleRef.current = THREE.MathUtils.lerp(flareScaleRef.current, 1, 0.02);
+  });
 
   return (
     <>
       <SolarLighting sunPosition={new THREE.Vector3(0, 0, 0)} intensity={3.5} />
-      <RealisticSun onBodyFocus={onBodyFocus} kpValue={kpValue} />
 
-      {/* ELECTRONIC HANDSHAKE: Linking Flare Emitter to Ripple Receiver */}
-      <SolarFlareParticles
-        sunPosition={new THREE.Vector3(0, 0, 0)}
-        earthPosition={new THREE.Vector3(40, 0, 0)}
-        isActive={
-          liveData.data?.xray.fluxClass?.startsWith('M') ||
-          liveData.data?.xray.fluxClass?.startsWith('X') || false
-        }
-        onImpact={() => {
-          setMagnetopauseImpact(true);
-          setTimeout(() => setMagnetopauseImpact(false), 5000); // 5s ripple duration
-        }}
-      />
+      <group scale={[flareScaleRef.current, flareScaleRef.current, flareScaleRef.current]}>
+        <Suspense fallback={null}>
+          <RealisticSun onBodyFocus={onBodyFocus} kpValue={kpValue} />
+        </Suspense>
+      </group>
 
-      {PLANETS.map((planet: any) => (
-        <group key={planet.name}>
-          <OrbitTrail body={planet.body} color={planet.name === 'Earth' ? '#22d3ee' : 'gray'} />
-          
-          {planet.name === 'Earth' ? (
-            <EarthGroup 
-               config={planet} 
-               kpValue={kpValue} 
-               currentDate={currentDate} 
-               magnetopauseImpact={magnetopauseImpact} // Pass the handshake signal
-               userLocation={userLocation} // Pass personal ground station
-               onClick={onEarthClick}     // Beacon drop callback
-            />
-          ) : (
-            <TexturedPlanet 
-               config={planet} 
-               currentDate={currentDate} 
-               onBodyFocus={onBodyFocus} 
-            />
-          )}
-          
-          {/* REAL-TIME MOONS: Calculated in place based on astroTime */}
-          <PlanetMoonsGroup planetName={planet.name} currentDate={currentDate} onBodyFocus={onBodyFocus} />
-        </group>
-      ))}
+      {PLANET_LIST.map((planet: any) => {
+        const pos3 = getBodyPosition(planet.name, currentDate);
+        const pos: [number, number, number] = [pos3.x, pos3.y, pos3.z];
+        return (
+          <OptimizedPlanet
+            key={planet.name}
+            config={planet}
+            position={pos}
+            onBodyFocus={onBodyFocus}
+          />
+        );
+      })}
 
-      {/* PERSONAL GROUND STATION BEACON — rendered at Earth's position */}
-      {userLocation && (
-        <UserBeacon
-          lat={userLocation.lat}
-          lon={userLocation.lon}
-          radius={2.0}              // Earth display radius (approx)
-          earthPosition={new THREE.Vector3(40, 0, 0)}
-          pulse={magnetopauseImpact && userInImpactedHemisphere}
-          name={userLocation.name}
-        />
+      {userLocation && (() => {
+        const earthPos = getBodyPosition('Earth', currentDate);
+        return (
+          <UserBeacon
+            lat={userLocation.lat}
+            lon={userLocation.lon}
+            radius={2.0}
+            earthPosition={earthPos}
+            pulse={magnetopauseImpact && userInImpactedHemisphere}
+            name={userLocation.name}
+          />
+        );
+      })()}
+
+      {/* satellites around Earth */}
+      {(() => {
+        const earthPos = getBodyPosition('Earth', currentDate);
+        return (
+          <>
+            <SatelliteTracker earthPosition={earthPos} earthRadius={2} />
+            <OvationAuroraShell earthPosition={earthPos} kpValue={kpValue} />
+            {showDeepSpace && (
+              <DeepSpaceTracker enabled={showDeepSpace} logarithmicScale={deepSpaceLogScale} />
+            )}
+          </>
+        );
+      })()}
+
+      {/* GIC risk overlay (red sphere) */}
+      {gicRisk > 0 && (
+        <mesh>
+          <sphereGeometry args={[2.05, 32, 32]} />
+          <meshBasicMaterial color="#ff0000" transparent opacity={Math.min(0.6, gicRisk * 0.6)} side={THREE.DoubleSide} />
+        </mesh>
       )}
 
-      {/* Maintain all original high-fidelity assets */}
-      <UFO onBodyFocus={onBodyFocus} currentDate={currentDate} />
-      <TeslaRoadster currentDate={currentDate} />
-      <AsteroidBelt visible={true} />
+      <Suspense fallback={null}>
+        <UFO onBodyFocus={onBodyFocus} currentDate={currentDate} focusedBody={focusedBody} />
+        <TeslaRoadster currentDate={currentDate} onBodyFocus={onBodyFocus} focusedBody={focusedBody} />
+        <AsteroidBelt visible={true} />
+      </Suspense>
     </>
   );
 }
 
-// --- PERSONAL GROUND STATION BEACON ---
-// A cyan ring that pulses when a CME impact reaches the user's hemisphere.
 function UserBeacon({ lat, lon, radius, earthPosition, pulse, name }: any) {
-  const meshRef = useRef<THREE.Mesh>(null!);
-  const outerRef = useRef<THREE.Mesh>(null!);
+  const meshRef    = useRef<THREE.Mesh>(null!);
+  const outerRef   = useRef<THREE.Mesh>(null!);
+  const frameCount = useRef(0);
+
   const localOffset = useMemo(() => latLonToVector3(lat, lon, radius * 1.02), [lat, lon, radius]);
-  // World position = Earth position + local surface offset
-  const worldPos = useMemo(
-    () => new THREE.Vector3(earthPosition.x + localOffset.x, earthPosition.y + localOffset.y, earthPosition.z + localOffset.z),
+  const worldPos    = useMemo(
+    () => new THREE.Vector3(
+      earthPosition.x + localOffset.x,
+      earthPosition.y + localOffset.y,
+      earthPosition.z + localOffset.z
+    ),
     [earthPosition, localOffset]
   );
 
-  useFrame((state) => {
+  useFrame(state => {
+    if (++frameCount.current % 3 !== 0) return;
     if (!meshRef.current) return;
-    const t = state.clock.getElapsedTime();
-    // Constant gentle breathe
-    const base = 0.6 + Math.sin(t * 1.5) * 0.2;
-    // Extra pulse when impact detected
-    const impact = pulse ? 0.4 + Math.abs(Math.sin(t * 8)) * 0.6 : 0;
-    meshRef.current.material.opacity = Math.min(1, base + impact);
-
+    const t   = state.clock.getElapsedTime();
+    const mat = meshRef.current.material as THREE.MeshBasicMaterial;
+    mat.opacity = Math.min(1, 0.6 + Math.sin(t * 1.5) * 0.2 + (pulse ? 0.4 + Math.abs(Math.sin(t * 8)) * 0.6 : 0));
     if (outerRef.current) {
-      const scale = pulse ? 1 + Math.abs(Math.sin(t * 4)) * 0.6 : 1;
-      outerRef.current.scale.setScalar(scale);
-      outerRef.current.material.opacity = pulse ? 0.3 + Math.abs(Math.sin(t * 4)) * 0.4 : 0.15;
+      outerRef.current.scale.setScalar(pulse ? 1 + Math.abs(Math.sin(t * 4)) * 0.6 : 1);
+      (outerRef.current.material as THREE.MeshBasicMaterial).opacity = pulse ? 0.3 + Math.abs(Math.sin(t * 4)) * 0.4 : 0.15;
     }
   });
 
   return (
     <group position={worldPos}>
-      {/* Outer expanding ring — extra pulse on impact */}
       <mesh ref={outerRef} rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.14, 0.18, 48]} />
         <meshBasicMaterial color={pulse ? '#ff6600' : '#00ffff'} transparent opacity={0.15} side={THREE.DoubleSide} />
       </mesh>
-      {/* Core ring */}
       <mesh ref={meshRef} rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.06, 0.10, 48]} />
         <meshBasicMaterial color="#00ffff" transparent opacity={0.8} side={THREE.DoubleSide} />
       </mesh>
-      {/* Label */}
       <Html distanceFactor={10}>
-        <div className={`text-[10px] font-mono px-2 py-1 rounded border whitespace-nowrap uppercase tracking-widest ${pulse ? 'text-orange-300 bg-orange-900/60 border-orange-500/50 animate-pulse' : 'text-cyan-400 bg-black/50 border-cyan-500/30'}`}>
+        <div className={`text-[10px] font-mono px-2 py-1 rounded border whitespace-nowrap uppercase tracking-widest
+          ${pulse ? 'text-orange-300 bg-orange-900/60 border-orange-500/50 animate-pulse' : 'text-cyan-400 bg-black/50 border-cyan-500/30'}`}>
           {pulse ? '⚠ CME IMPACT DETECTED' : `⊕ ${name ?? 'Ground Station'}`}
         </div>
       </Html>
     </group>
   );
 }
+

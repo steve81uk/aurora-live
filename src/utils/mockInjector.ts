@@ -1,4 +1,4 @@
-import { FeatureVector } from '../ml/types';
+import type { FeatureVector } from '../ml/types';
 
 export const generateXClassMock = (): FeatureVector => ({
   solarWindSpeed: Array(24).fill(1200), // Extreme speed

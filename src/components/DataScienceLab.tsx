@@ -683,10 +683,10 @@ export function DataScienceLab() {
                   borderRadius: '0.5rem',
                   fontFamily: 'Inter'
                 }}
-                formatter={(value: any, name: string) => {
+                formatter={(value: any, name?: string) => {
                   if (name === 'kp') return [`Kp ${value.toFixed(1)}`, 'Disturbance'];
                   if (name === 'bz') return [`${value.toFixed(1)} nT`, 'IMF Bz'];
-                  return [value, name];
+                  return [value, name ?? ''];
                 }}
               />
               <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="3 3" />
