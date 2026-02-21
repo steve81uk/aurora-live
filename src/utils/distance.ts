@@ -122,8 +122,8 @@ export function calculateProbeTravelTime(
  */
 export function getDistanceFunFact(
   distanceData: { km: number; miles: number; au: number },
-  body1Name: string,
-  body2Name: string
+  _body1Name: string,
+  _body2Name: string
 ): string {
   const { km, au } = distanceData;
   

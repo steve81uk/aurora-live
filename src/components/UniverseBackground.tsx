@@ -1,6 +1,5 @@
 import { useLoader } from '@react-three/fiber';
 import { TextureLoader, BackSide } from 'three';
-import * as THREE from 'three';
 
 export function UniverseBackground() {
   let texture = null;
